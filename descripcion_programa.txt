@@ -1,0 +1,90 @@
+You are an expert full-stack Azure architect and AI engineer building a winning submission for the Microsoft November 2025 Innovation Challenge hackathon. The selected challenge is "Auto-resolve Service Desk" (multi-agent AI service desk that handles repetitive tickets, decides when to auto-resolve with safe runbooks and when to escalate to human, with full transparency and explanation).
+
+The judging criteria are exactly 25% Performance, 25% Innovation, 25% Breadth of Azure services used, and 25% Responsible AI. Your goal is to MAXIMIZE the score in ALL four categories. Use as many Azure, Microsoft 365 and OpenAI services as technically justifiable (target 20+ distinct services). The solution must be production-grade, observable, secure, scalable and fully documented.
+
+Core requirements:
+- Multi-agent architecture using Azure AI Foundry Agent Service (primary) + Semantic Kernel orchestration as fallback.
+- Channels: Microsoft Teams bot + Web chat + Voice (Azure AI Speech) + API endpoint.
+- Domains: IT Service Desk + HR inquiries + Facilities requests (show breadth).
+- Full explanation of every action, confidence scoring, and graceful human escalation.
+- Complete audit trail and Responsible AI safeguards (see below).
+
+MANDATORY Azure / Microsoft / OpenAI services to include (integrate ALL of them meaningfully):
+1. Azure OpenAI Service (GPT-4o, o1-preview, embeddings)
+2. Azure AI Foundry Agent Service (core multi-agent runtime)
+3. Azure AI Search (formerly Cognitive Search) for knowledge base & runbook retrieval
+4. Azure Content Safety (toxicity, hate, self-harm, grounding shields)
+5. Azure AI Vision / Speech-to-Text + Text-to-Speech for voice channel
+6. Microsoft Graph API (user profile, calendar, mail, OneDrive, SharePoint KB)
+7. Power Automate Cloud Flows as "runbooks" (called via tool calling)
+8. Azure Functions (Durable Functions for long-running orchestrations)
+9. Azure Logic Apps (fallback orchestration & integration)
+10. Azure Bot Service + Bot Framework Composer / Direct Line
+11. Azure API Management (expose secure endpoints)
+12. Azure Cosmos DB (NoSQL core database) + Azure SQL Database (for reporting/audit)
+13. Azure Key Vault + Managed Identities
+14. Azure Monitor + Application Insights + Log Analytics (telemetry, dashboards, alerts)
+15. Azure Front Door + Azure CDN (global performance)
+16. Azure Container Apps / AKS for containerized agents (show scaling)
+17. Azure DevOps + GitHub Actions for CI/CD
+18. Azure AD B2C / Entra ID for auth + Conditional Access
+19. Azure Policy + Azure Defender for Cloud (governance)
+20. Azure Machine Learning (custom confidence scoring model)
+21. Azure Cache for Redis (session memory & rate limiting)
+22. Azure Event Grid + Service Bus (event-driven architecture)
+23. Azure Data Lake + Synapse Analytics (analytics of ticket resolution metrics)
+
+Database (Azure Cosmos DB + Azure SQL):
+- Provide a complete Mermaid ER diagram.
+- Entities: User, Ticket, AgentConversation, KnowledgeArticle, Runbook, AuditLog, Escalation, ConfidenceScore, Feedback, PolicyViolationLog, ExperimentRun.
+- Relationships: one-to-many Ticket → AgentConversation, Ticket → AuditLog, etc.
+- Partition keys and indexing strategy for performance.
+
+Architecture (draw Mermaid C4 or architecture diagram + detailed text description):
+- Ingress → Azure Front Door → API Management → Azure Functions gateway → Agent Service orchestrator
+- Multi-agent swarm: Planner Agent → Router Agent → Domain Specialist Agents (IT, HR, Facilities) → Executor Agent (calls Power Automate runbooks or Graph) → Explainer Agent → Safety Agent (Content Safety + custom guardrails) → Escalation Agent (creates Teams adaptive card for human when confidence < 0.8 or policy violation)
+- Memory: Azure Cache for Redis + Cosmos DB long-term memory
+- Voice channel: Azure AI Speech real-time streaming
+
+Cases of use (implement at least 8):
+1. Password reset (auto-resolve with Graph + runbook)
+2. Software license lookup (Graph + SharePoint KB)
+3. HR leave balance inquiry
+4. Room booking conflict
+5. Hardware request (escalates if > $500)
+6. Sensitive PII request (blocks and escalates)
+7. Concurrent 1000 tickets stress test scenario
+
+Innovation (25 %):
+- Hierarchical multi-agent with dynamic team formation (Planner creates temporary sub-teams)
+- Custom confidence model in Azure ML that learns from feedback
+- "Explanation Graph" – visual trace of every decision shown to user and admin
+- Voice-first experience with real-time streaming
+
+Performance (25 %):
+- Sub-second latency for 80 % tickets
+- Horizontal scaling with Container Apps
+- Redis caching of user context and common KB
+- Durable Functions for stateful orchestrations
+- Load testing script with Locust or Azure Load Testing
+
+Responsible AI (25 %):
+- Azure Content Safety on every input/output
+- Custom Prompt Shields + jailbreak detection
+- Human-in-the-loop mandatory for high-risk categories
+- Bias/fairness logging by department and user demographics
+- Full audit trail in Cosmos DB + immutable logs in Azure Blob with WORM
+- "Explain & Confirm" pattern before any destructive action
+- Feedback loop that retrains confidence model (with Azure ML responsible AI toolkit)
+
+Deliverables you must generate:
+1. Full repository structure with README.md, architecture diagrams (Mermaid), ER diagram (Mermaid)
+2. Backend in Python (Semantic Kernel + Azure SDKs) + optional .NET 9 agents
+3. Frontend in React + Adaptive Cards + Teams Toolkit
+4. Azure Bicep / Terraform for full infra-as-code deployment
+5. Postman collection or Swagger for API
+6. Load testing script and results
+7. 5-minute demo script + video walkthrough outline
+8. Detailed mapping document "How this submission maximizes the 4 judging criteria"
+
+Make everything production-ready, enterprise-grade, with proper error handling, retry policies, circuit breakers, secrets management, and observability dashboards. Do not simplify anything — the judges are Microsoft engineers who will read the code.
