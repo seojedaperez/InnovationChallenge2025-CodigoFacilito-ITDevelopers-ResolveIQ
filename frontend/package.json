@@ -1,0 +1,44 @@
+{
+  "name": "azure-ai-servicedesk-frontend",
+  "version": "1.0.0",
+  "description": "Multi-Agent AI Service Desk Frontend for Microsoft Innovation Challenge",
+  "private": true,
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 3000",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@azure/msal-browser": "^4.26.2",
+    "@azure/msal-react": "^3.0.22",
+    "@fluentui/react-components": "^9.56.0",
+    "@fluentui/react-icons": "^2.0.263",
+    "@microsoft/teams-js": "^2.31.0",
+    "@microsoft/teamsfx": "latest",
+    "@tanstack/react-query": "^5.62.12",
+    "adaptivecards": "latest",
+    "adaptivecards-react": "latest",
+    "axios": "^1.7.9",
+    "microsoft-cognitiveservices-speech-sdk": "^1.41.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.1",
+    "reactflow": "^11.11.4",
+    "recharts": "^2.15.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
+    "@typescript-eslint/eslint-plugin": "^8.20.0",
+    "@typescript-eslint/parser": "^8.20.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.18.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.18",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7",
+    "vitest": "^3.0.7"
+  }
+}

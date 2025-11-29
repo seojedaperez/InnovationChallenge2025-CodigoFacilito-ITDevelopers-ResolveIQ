@@ -19,19 +19,14 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# Virtual environments
 venv/
 env/
 ENV/
 .venv
 
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# Environment
+# Environment variables
 .env
 .env.local
 .env.*.local
@@ -54,12 +49,14 @@ htmlcov/
 # Logs
 *.log
 logs/
-/tmp/
 
 # Azure
 .azure/
 
-# Build outputs
-dist/
-dist-ssr/
-*.local
+# Jupyter
+.ipynb_checkpoints
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json

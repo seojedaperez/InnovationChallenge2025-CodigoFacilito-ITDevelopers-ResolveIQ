@@ -1,0 +1,99 @@
+:root {
+  /* Dark/Neon Theme Palette */
+  --bg-dark: #0a0e17;
+  --bg-card: rgba(20, 25, 35, 0.7);
+  --bg-card-hover: rgba(30, 35, 50, 0.8);
+
+  --primary-neon: #00f0ff;
+  --primary-blue: #0078d4;
+  --accent-purple: #b026ff;
+
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.4);
+
+  --border-glow: 0 0 10px rgba(0, 240, 255, 0.3);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+
+  --font-family: 'Outfit', 'Segoe UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(0, 120, 212, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(176, 38, 255, 0.05) 0%, transparent 40%);
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 5px rgba(0, 240, 255, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+  }
+
+  100% {
+    box-shadow: 0 0 5px rgba(0, 240, 255, 0.2);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: var(--glass-border);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+}
+
+.neon-border {
+  border: 1px solid var(--primary-neon);
+  box-shadow: var(--border-glow);
+}
+
+.neon-text {
+  color: var(--primary-neon);
+  text-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
+}
