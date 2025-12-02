@@ -18,51 +18,182 @@
   --font-family: 'Outfit', 'Segoe UI', sans-serif;
 }
 
+.light-mode {
+  --primary-neon: #0078d4;
+  /* Darker blue for light mode */
+  --primary-blue: #005a9e;
+  --bg-dark: #f0f2f5;
+  /* Light gray background */
+  --bg-card: #ffffff;
+  --bg-card-hover: #f5f5f5;
+  --text-primary: #323130;
+  --text-secondary: #605e5c;
+  --text-muted: #a19f9d;
+  --glass-border: 1px solid rgba(0, 0, 0, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.9);
+}
+
+/* Accessibility: Color Blind Modes */
+
+/* Protanopia (Red Weak) - Avoid Red/Green confusion, use Blue/Yellow */
+.mode-protanopia {
+  --primary-neon: #e69f00;
+  /* Orange */
+  --primary-blue: #56b4e9;
+  /* Sky Blue */
+  --accent-purple: #009e73;
+  /* Bluish Green */
+  --border-glow: 0 0 10px rgba(230, 159, 0, 0.5);
+
+  /* Adjust backgrounds for better visibility */
+  --bg-dark: #0f121a;
+  --bg-card: rgba(25, 30, 40, 0.9);
+}
+
+/* Deuteranopia (Green Weak) - Similar to Protanopia but slightly different hues */
+.mode-deuteranopia {
+  --primary-neon: #d55e00;
+  /* Vermilion */
+  --primary-blue: #0072b2;
+  /* Blue */
+  --accent-purple: #f0e442;
+  /* Yellow */
+  --border-glow: 0 0 10px rgba(213, 94, 0, 0.5);
+
+  /* Adjust backgrounds for better visibility */
+  --bg-dark: #0e1015;
+  --bg-card: rgba(20, 25, 35, 0.9);
+}
+
+/* Tritanopia (Blue Weak) - Avoid Blue/Yellow, use Red/Cyan */
+.mode-tritanopia {
+  --primary-neon: #cc79a7;
+  /* Reddish Purple */
+  --primary-blue: #009e73;
+  /* Bluish Green */
+  --accent-purple: #d55e00;
+  /* Vermilion */
+  --border-glow: 0 0 10px rgba(204, 121, 167, 0.5);
+
+  /* Adjust backgrounds for better visibility */
+  --bg-dark: #100f15;
+  --bg-card: rgba(30, 25, 35, 0.9);
+}
+
+/* High Contrast (Monochromatic) */
+.mode-high-contrast {
+  --bg-dark: #000000 !important;
+  --bg-card: #000000 !important;
+  --bg-card-hover: #1a1a1a !important;
+
+  --primary-neon: #ffffff !important;
+  --primary-blue: #ffffff !important;
+  --accent-purple: #ffffff !important;
+
+  --text-primary: #ffffff !important;
+  --text-secondary: #ffffff !important;
+  --text-muted: #e0e0e0 !important;
+
+  --border-glow: 0 0 0 transparent !important;
+  --glass-border: 2px solid #ffffff !important;
+}
+
+.light-mode.mode-high-contrast {
+  --bg-dark: #ffffff !important;
+  --bg-card: #ffffff !important;
+  --bg-card-hover: #f0f0f0 !important;
+
+  --primary-neon: #000000 !important;
+  --primary-blue: #000000 !important;
+  --accent-purple: #000000 !important;
+
+  --text-primary: #000000 !important;
+  --text-secondary: #000000 !important;
+  --text-muted: #1a1a1a !important;
+
+  --glass-border: 2px solid #000000 !important;
+}
+
+/* WCAG Levels (Adjust Contrast) */
+.wcag-aa {
+  /* Standard contrast - defaults are usually AA compliant */
+}
+
+.wcag-aaa {
+  /* Enhanced contrast - Maximize text visibility */
+  --text-primary: #ffffff !important;
+  --text-secondary: #f5f5f5 !important;
+  --text-muted: #e0e0e0 !important;
+
+  --bg-card: #05080f !important;
+  /* Solid dark background for better contrast */
+  --bg-card-hover: #101520 !important;
+  --glass-border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.light-mode.wcag-aaa {
+  --text-muted: #404040;
+  --bg-card: #ffffff;
+  --text-primary: #000000 !important;
+  --text-secondary: #1a1a1a !important;
+  --text-muted: #333333 !important;
+
+  --bg-card: #ffffff !important;
+  --bg-card-hover: #f0f0f0 !important;
+  --glass-border: 1px solid rgba(0, 0, 0, 0.3) !important;
+}
+
+
+/* Accessibility: Text Sizes */
+.text-normal {
+  font-size: 16px;
+}
+
+.text-large {
+  font-size: 18px;
+}
+
+.text-xlarge {
+  font-size: 20px;
+}
+
 body {
   margin: 0;
   padding: 0;
   background-color: var(--bg-dark);
   color: var(--text-primary);
-  font-family: var(--font-family);
-  background-image:
-    radial-gradient(circle at 10% 20%, rgba(0, 120, 212, 0.1) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(176, 38, 255, 0.05) 0%, transparent 40%);
-  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease, font-size 0.3s ease;
 }
 
-/* Scrollbar */
+/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-dark);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: rgba(128, 128, 128, 0.3);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: rgba(128, 128, 128, 0.5);
 }
 
-/* Animations */
-@keyframes pulse-glow {
-  0% {
-    box-shadow: 0 0 5px rgba(0, 240, 255, 0.2);
-  }
-
-  50% {
-    box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
-  }
-
-  100% {
-    box-shadow: 0 0 5px rgba(0, 240, 255, 0.2);
-  }
+/* Glassmorphism utility */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  border: var(--glass-border);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
+/* Animation */
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -75,12 +206,15 @@ body {
   }
 }
 
-.animate-fade-in {
-  animation: fade-in-up 0.3s ease-out forwards;
+.text-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-/* Glassmorphism Utilities */
-.glass-panel {
+.animate-fade-in {
+  animation: fade-in-up 0.3s ease-out forwards;
   background: var(--bg-card);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);

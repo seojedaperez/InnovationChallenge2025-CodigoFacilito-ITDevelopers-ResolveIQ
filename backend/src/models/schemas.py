@@ -89,6 +89,8 @@ class Ticket(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     resolved_at: Optional[datetime] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    ip_address: Optional[str] = None
+    country: Optional[str] = None
 
 
 class AgentMessage(BaseModel):
@@ -153,6 +155,22 @@ class KnowledgeArticle(BaseModel):
     source: str
     relevance_score: Optional[float] = None
     last_updated: datetime = Field(default_factory=datetime.utcnow)
+
+
+class KnowledgeArticleCreate(BaseModel):
+    title: str
+    content: str
+    category: TicketCategory
+    tags: List[str] = Field(default_factory=list)
+    source: str = "Manual"
+
+
+class KnowledgeArticleUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    category: Optional[TicketCategory] = None
+    tags: Optional[List[str]] = None
+    source: Optional[str] = None
 
 
 class Runbook(BaseModel):
@@ -222,8 +240,11 @@ class MetricsResponse(BaseModel):
     escalated_tickets: int
     average_resolution_time: float
     average_confidence_score: float
+    customer_satisfaction_score: float = 0.0
     tickets_by_category: Dict[str, int]
+    tickets_by_status: Dict[str, int] = Field(default_factory=dict)
     tickets_by_channel: Dict[str, int]
+    resolution_time_trend: List[Dict[str, Any]] = Field(default_factory=list)
     period_start: datetime
     period_end: datetime
 
@@ -232,7 +253,12 @@ class ChatRequest(BaseModel):
     """Request model for chat endpoint"""
     user_id: str = Field(..., description="User identifier")
     message: str = Field(..., min_length=1, max_length=2000, description="User message")
+    language: Optional[str] = Field(default="en", description="Language for the response")
     context: Optional[Dict[str, Any]] = Field(default=None, description="Optional context information")
+    ip_address: Optional[str] = Field(default=None, description="User IP address")
+    country: Optional[str] = Field(default=None, description="User country")
+    email_notifications: Optional[bool] = Field(default=False, description="Enable email notifications")
+    user_email: Optional[str] = Field(default=None, description="User email for notifications")
 
 
 class ChatResponse(BaseModel):
@@ -244,10 +270,12 @@ class ChatResponse(BaseModel):
     response: str
     confidence: float
     category: str
+    priority: Optional[str] = None
     intent: Optional[str] = None
     can_auto_resolve: bool
     reasoning: str
     kb_articles_used: int
+    kb_articles: Optional[List[Dict[str, Any]]] = None
     safety_check_passed: bool
     agents_involved: List[str]
     timestamp: datetime

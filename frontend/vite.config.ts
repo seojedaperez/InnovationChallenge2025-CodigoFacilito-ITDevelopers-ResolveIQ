@@ -11,9 +11,16 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: true, // CRITICAL: Allow iframe embedding in Replit
     proxy: {
+      '/api/health': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api\/health/, '/health'),
+      },
       '/api': {
         target: 'http://localhost:5000',
-        changeOrigin: true
+        changeOrigin: true,
+        secure: false,
       }
     }
   },

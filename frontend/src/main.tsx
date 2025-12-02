@@ -5,10 +5,12 @@ import './index.css'
 import { PublicClientApplication, EventType } from "@azure/msal-browser";
 import { MsalProvider } from "@azure/msal-react";
 import { msalConfig } from "./authConfig";
+import { SettingsProvider } from './context/SettingsContext';
 
 const msalInstance = new PublicClientApplication(msalConfig);
 
 // Initialize MSAL
+console.log('DEBUG: Initializing MSAL');
 msalInstance.initialize().then(() => {
   // Default to using the first account if no account is active on page load
   if (!msalInstance.getActiveAccount() && msalInstance.getAllAccounts().length > 0) {
@@ -24,10 +26,13 @@ msalInstance.initialize().then(() => {
   });
 
   msalInstance.handleRedirectPromise().then(() => {
+    console.log('DEBUG: handleRedirectPromise completed');
     ReactDOM.createRoot(document.getElementById('root')!).render(
       <React.StrictMode>
         <MsalProvider instance={msalInstance}>
-          <App />
+          <SettingsProvider>
+            <App />
+          </SettingsProvider>
         </MsalProvider>
       </React.StrictMode>,
     );

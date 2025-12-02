@@ -32,6 +32,8 @@ export interface Ticket {
     assigned_agent?: string;
     resolution?: string;
     escalation_reason?: string;
+    ip_address?: string;
+    country?: string;
 }
 
 export interface AgentMessage {

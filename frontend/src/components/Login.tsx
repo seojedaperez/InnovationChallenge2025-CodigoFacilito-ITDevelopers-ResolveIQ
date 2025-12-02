@@ -2,6 +2,7 @@ import { useMsal } from "@azure/msal-react";
 import { loginRequest } from "../authConfig";
 import { Button, Text, Title1, makeStyles, shorthands } from '@fluentui/react-components';
 import { Person24Regular } from '@fluentui/react-icons';
+import ParticleHead from './ParticleHead';
 
 const useStyles = makeStyles({
     container: {
@@ -57,6 +58,7 @@ const useStyles = makeStyles({
 });
 
 export const Login = () => {
+    console.log('DEBUG: Login component rendering');
     const { instance } = useMsal();
     const styles = useStyles();
 
@@ -68,7 +70,8 @@ export const Login = () => {
 
     return (
         <div className={styles.container}>
-            <div className={styles.card}>
+            <ParticleHead />
+            <div className={styles.card} style={{ zIndex: 1 }}>
                 <div className={styles.logo}>
                     <Person24Regular style={{ fontSize: '32px', color: 'white' }} />
                 </div>

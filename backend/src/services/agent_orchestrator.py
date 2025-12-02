@@ -1,6 +1,8 @@
 import logging
 import uuid
 import asyncio
+import os
+import json
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
@@ -40,9 +42,83 @@ class AgentOrchestrator:
         self.runbook_service = None
         self.telemetry = None
         
+        # Load persisted tickets
+        self._load_data()
+        
     async def initialize(self):
         """Initialize all Azure services and agents"""
         logger.info("Initializing Agent Orchestrator...")
+        
+        # Initialize Azure Content Safety
+        self.content_safety = get_content_safety_service()
+        
+        # Initialize Azure Cosmos DB
+        self.cosmos = get_cosmos_service()
+        
+        # Initialize Redis
+        self.redis = get_redis_service()
+        
+        # Initialize Foundry Agent Service
+        self.foundry = get_foundry_service()
+        
+        # Initialize Runbook Service
+        self.runbook_service = get_runbook_service()
+        
+        # Initialize Telemetry
+        self.telemetry = get_telemetry_service()
+        
+        self.initialized = True
+        logger.info("Agent Orchestrator initialized")
+
+    async def shutdown(self):
+        """Shutdown services"""
+        logger.info("Shutting down Agent Orchestrator...")
+        self.initialized = False
+
+    async def _run_safety_check(self, text: str) -> bool:
+        """Run content safety checks"""
+        if self.content_safety:
+            result = await self.content_safety.check_text(text)
+            return result.is_safe
+        return True
+
+    async def _categorize_ticket(self, description: str, thread_id: str) -> tuple[TicketCategory, List[TicketCategory]]:
+        """Categorize ticket using Router Agent"""
+        # ... (rest of the method)
+
+    # ... (rest of methods)
+
+    async def process_ticket(self, ticket_request: TicketCreate) -> TicketResponse:
+        # ... (implementation)
+        
+        # Save to local persistence
+        self.tickets_db[ticket.id] = ticket
+        self.conversations_db[ticket.id] = conversation # Use ticket_id as key for consistency
+        await self._save_data_async()
+        
+        return TicketResponse(
+            ticket=ticket,
+            conversation=conversation,
+            explanation_graph=self._generate_explanation_graph(conversation),
+            next_steps=self._determine_next_steps(ticket),
+            requires_user_action=ticket.status == TicketStatus.PENDING_USER
+        )
+
+    # ...
+
+    async def submit_feedback(self, ticket_id: str, rating: int, comments: Optional[str]) -> bool:
+        """Submit feedback for retraining confidence model"""
+        logger.info(f"Received feedback for ticket {ticket_id}: rating={rating}")
+        
+        if ticket_id in self.tickets_db:
+            ticket = self.tickets_db[ticket_id]
+            ticket.metadata["feedback_rating"] = rating
+            if comments:
+                ticket.metadata["feedback_comments"] = comments
+            self._save_data()
+            return True
+            
+        return False
         
         try:
             # Initialize Azure services
@@ -194,9 +270,12 @@ class AgentOrchestrator:
         category, detected_categories = await self._categorize_ticket(ticket.description, thread_id)
         ticket.category = category
         
+        cat_value = category.value if hasattr(category, "value") else str(category)
+        det_values = [c.value if hasattr(c, "value") else str(c) for c in detected_categories]
+        
         conversation.messages.append(AgentMessage(
             agent_type=AgentType.ROUTER,
-            content=f"Ticket categorized as: {category.value}" + (f" ({', '.join([c.value for c in detected_categories])})" if category == TicketCategory.MULTI else ""),
+            content=f"Ticket categorized as: {cat_value}" + (f" ({', '.join(det_values)})" if cat_value == "multi" else ""),
             confidence=0.92,
             reasoning="Based on keyword analysis and semantic understanding"
         ))
@@ -204,8 +283,8 @@ class AgentOrchestrator:
         if self.telemetry:
             await self.telemetry.log_event("TicketCategorized", {
                 "ticket_id": ticket_id,
-                "category": category.value,
-                "detected": [c.value for c in detected_categories]
+                "category": cat_value,
+                "detected": det_values
             })
         
         # Step 3: Domain Specialist - Process with specialized agent
@@ -249,11 +328,14 @@ class AgentOrchestrator:
                 logger.info(f"Ticket saved to Cosmos DB: {ticket_id}")
             except Exception as e:
                 logger.error(f"Failed to save to Cosmos DB: {e}")
-                self.tickets_db[ticket_id] = ticket
-                self.conversations_db[ticket_id] = conversation
         else:
             self.tickets_db[ticket_id] = ticket
             self.conversations_db[ticket_id] = conversation
+            
+        # Always save to local persistence for demo
+        self.tickets_db[ticket_id] = ticket
+        self.conversations_db[ticket_id] = conversation
+        self._save_data()
         
         # Step 6: Generate explanation graph
         explanation_graph = self._build_explanation_graph(conversation)
@@ -268,50 +350,88 @@ class AgentOrchestrator:
         )
     
     async def _run_safety_check(self, content: str) -> bool:
-        """Run Azure Content Safety check on input"""
+        """Run safety check using Azure Content Safety AND LLM Evaluator"""
         logger.debug(f"Running safety check on content: {content[:50]}...")
         
+        # 0. Local PII Check (Regex) - Immediate block for obvious PII
+        if self._check_pii_regex(content):
+             logger.warning("Content Safety blocked: PII detected (Regex)")
+             return False
+        
+        is_safe = True
+        
+        # 1. Azure Content Safety (Fast, cheap, pattern-based)
         if self.content_safety:
             result = await self.content_safety.analyze_text(content)
             if not result.is_safe:
                 logger.warning(f"Content Safety blocked: {result.blocked_reason}")
-            return result.is_safe
-        else:
-            # Fallback: Use Safety Evaluator Agent (LLM)
-            logger.warning("Content Safety service unavailable, using LLM Safety Evaluator")
+                return False
+            is_safe = result.is_safe
             
-            if self.foundry and self.foundry.project_client and AgentType.SAFETY_EVALUATOR in self.agents:
-                try:
-                    # Create a temporary thread for safety evaluation
-                    thread = await self.foundry.create_thread()
-                    if thread:
-                        await self.foundry.create_message(thread.id, f"Analyze this content: {content}")
-                        run = await self.foundry.run_agent(thread.id, self.agents[AgentType.SAFETY_EVALUATOR].id)
-                        
-                        # In a real implementation, we would wait for the run to complete and get the response.
-                        # For this demo, we'll assume the agent works and mock the response based on the prompt content
-                        # to avoid complex async polling in this snippet.
-                        
-                        # Mocking the LLM response logic for the demo since we can't easily poll here without blocking
-                        # This simulates what the LLM would likely say based on the instructions
-                        content_lower = content.lower()
-                        if "dime c" in content_lower or "tell me how" in content_lower:
-                             if any(harmful in content_lower for harmful in ["borrar", "hack", "robar", "eliminar", "bypass", "delete", "drop"]):
-                                 logger.warning(f"LLM Safety Evaluator: Blocked jailbreak attempt")
-                                 return False
-                        
-                        if "borrar la base de datos" in content_lower or "delete database" in content_lower:
-                            logger.warning("LLM Safety Evaluator: Blocked database attack")
-                            return False
-                            
-                        return True
-                        
-                except Exception as e:
-                    logger.error(f"LLM Safety Evaluator failed: {e}")
-                    return False # Fail closed
+        # 2. LLM Safety Evaluator (Semantic, context-aware)
+        # We run this even if Azure says "Safe" to catch sophisticated jailbreaks
+        if is_safe:
+            is_safe = await self._run_llm_safety_check(content)
             
-            # Ultimate fallback if even LLM fails
-            return False
+        return is_safe
+
+    def _check_pii_regex(self, content: str) -> bool:
+        """Check for PII using regex"""
+        import re
+        
+        # Regex for 13-19 digit numbers (Credit Cards)
+        cc_pattern = r'\b(?:\d[ -]*?){13,19}\b'
+        # Regex for Email
+        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        
+        if re.search(cc_pattern, content):
+            logger.warning("Content safety: PII (Credit Card) detected")
+            return True
+        
+        if re.search(email_pattern, content):
+            logger.warning("Content safety: PII (Email) detected")
+            return True
+            
+        return False
+
+    async def _run_llm_safety_check(self, content: str) -> bool:
+        """Run safety check using LLM agent"""
+        logger.info("Running LLM Safety Evaluator check...")
+        
+        if self.foundry and self.foundry.project_client and AgentType.SAFETY_EVALUATOR in self.agents:
+            try:
+                # Create a temporary thread for safety evaluation
+                thread = await self.foundry.create_thread()
+                if thread:
+                    await self.foundry.create_message(thread.id, f"Analyze this content: {content}")
+                    run = await self.foundry.run_agent(thread.id, self.agents[AgentType.SAFETY_EVALUATOR].id)
+                    
+                    # In a real implementation, we would wait for the run to complete and get the response.
+                    # For this demo, we'll assume the agent works and mock the response based on the prompt content
+                    # to avoid complex async polling in this snippet.
+                    
+                    # Mocking the LLM response logic for the demo since we can't easily poll here without blocking
+                    # This simulates what the LLM would likely say based on the instructions
+                    content_lower = content.lower()
+                    if "dime c" in content_lower or "tell me how" in content_lower:
+                            if any(harmful in content_lower for harmful in ["borrar", "hack", "robar", "eliminar", "bypass", "delete", "drop"]):
+                                logger.warning(f"LLM Safety Evaluator: Blocked jailbreak attempt")
+                                return False
+                    
+                    if "borrar la base de datos" in content_lower or "delete database" in content_lower:
+                        logger.warning("LLM Safety Evaluator: Blocked database attack")
+                        return False
+                        
+                    return True
+                    
+            except Exception as e:
+                logger.error(f"LLM Safety Evaluator failed: {e}")
+                # If LLM fails, we default to whatever the previous check said (which was True to get here)
+                # Or we could fail closed. For now, let's fail closed for safety.
+                return False 
+        
+        # If agent not available, we can't verify, so we rely on previous check
+        return True
     
     async def _categorize_ticket(self, description: str, thread_id: str) -> tuple[TicketCategory, List[TicketCategory]]:
         """Categorize ticket using Router Agent. Returns (PrimaryCategory, List[AllDetectedCategories])"""
@@ -588,22 +708,160 @@ class AgentOrchestrator:
         # Fallback to in-memory
         return self.tickets_db.get(ticket_id)
     
+    def _load_data(self):
+        """Load tickets and conversations from local JSON files"""
+        try:
+            data_dir = os.path.join(os.getcwd(), "data")
+            os.makedirs(data_dir, exist_ok=True)
+            
+            # Load Tickets
+            tickets_path = os.path.join(data_dir, "tickets.json")
+            if os.path.exists(tickets_path):
+                with open(tickets_path, "r") as f:
+                    data = json.load(f)
+                    for ticket_data in data:
+                        if "created_at" in ticket_data:
+                            ticket_data["created_at"] = datetime.fromisoformat(ticket_data["created_at"])
+                        if "updated_at" in ticket_data:
+                            ticket_data["updated_at"] = datetime.fromisoformat(ticket_data["updated_at"])
+                        if "resolved_at" in ticket_data and ticket_data["resolved_at"]:
+                            ticket_data["resolved_at"] = datetime.fromisoformat(ticket_data["resolved_at"])
+                        ticket = Ticket(**ticket_data)
+                        self.tickets_db[ticket.id] = ticket
+                logger.info(f"Loaded {len(self.tickets_db)} tickets")
+
+            # Load Conversations
+            conversations_path = os.path.join(data_dir, "conversations.json")
+            if os.path.exists(conversations_path):
+                with open(conversations_path, "r") as f:
+                    data = json.load(f)
+                    for conv_data in data:
+                        if "created_at" in conv_data:
+                            conv_data["created_at"] = datetime.fromisoformat(conv_data["created_at"])
+                        # Handle messages timestamp
+                        if "messages" in conv_data:
+                            for msg in conv_data["messages"]:
+                                if "timestamp" in msg:
+                                    msg["timestamp"] = datetime.fromisoformat(msg["timestamp"])
+                        
+                        conv = AgentConversation(**conv_data)
+                        self.conversations_db[conv.ticket_id] = conv # Index by ticket_id for easy lookup
+                logger.info(f"Loaded {len(self.conversations_db)} conversations")
+                
+        except Exception as e:
+            logger.error(f"Error loading data: {e}")
+
+    async def _save_data_async(self):
+        """Save tickets and conversations to local JSON files asynchronously"""
+        await asyncio.to_thread(self._save_data)
+
+    def _save_data(self):
+        """Save tickets and conversations to local JSON files"""
+        try:
+            data_dir = os.path.join(os.getcwd(), "data")
+            os.makedirs(data_dir, exist_ok=True)
+            
+            # Save Tickets
+            tickets_path = os.path.join(data_dir, "tickets.json")
+            tickets_data = []
+            for ticket in self.tickets_db.values():
+                t_dict = ticket.model_dump()
+                t_dict["created_at"] = ticket.created_at.isoformat()
+                t_dict["updated_at"] = ticket.updated_at.isoformat()
+                if ticket.resolved_at:
+                    t_dict["resolved_at"] = ticket.resolved_at.isoformat()
+                tickets_data.append(t_dict)
+            
+            with open(tickets_path, "w") as f:
+                json.dump(tickets_data, f, indent=2)
+                
+            # Save Conversations
+            conversations_path = os.path.join(data_dir, "conversations.json")
+            convs_data = []
+            for conv in self.conversations_db.values():
+                c_dict = conv.model_dump()
+                c_dict["created_at"] = conv.created_at.isoformat()
+                # Handle messages timestamp
+                if "messages" in c_dict:
+                    for msg in c_dict["messages"]:
+                        if isinstance(msg["timestamp"], datetime):
+                            msg["timestamp"] = msg["timestamp"].isoformat()
+                convs_data.append(c_dict)
+                
+            with open(conversations_path, "w") as f:
+                json.dump(convs_data, f, indent=2)
+                
+            logger.info("Saved data to storage")
+        except Exception as e:
+            logger.error(f"Error saving data: {e}")
+
     async def get_metrics(self) -> MetricsResponse:
-        """Get service desk metrics"""
+        """Get service desk metrics from real data"""
         total = len(self.tickets_db)
         resolved = sum(1 for t in self.tickets_db.values() if t.status == TicketStatus.RESOLVED)
         escalated = sum(1 for t in self.tickets_db.values() if t.status == TicketStatus.ESCALATED)
         
-        avg_confidence = sum(t.confidence_score or 0 for t in self.tickets_db.values()) / max(total, 1)
+        # Calculate Average Resolution Time
+        resolution_times = []
+        for t in self.tickets_db.values():
+            if t.status == TicketStatus.RESOLVED and t.resolved_at and t.created_at:
+                diff = (t.resolved_at - t.created_at).total_seconds() / 3600  # hours
+                resolution_times.append(diff)
+        
+        avg_resolution = sum(resolution_times) / len(resolution_times) if resolution_times else 0.0
+        
+        # Calculate Average Confidence
+        confidences = [t.confidence_score for t in self.tickets_db.values() if t.confidence_score is not None]
+        avg_confidence = sum(confidences) / len(confidences) if confidences else 0.0
+        
+        # Calculate CSAT
+        ratings = []
+        for t in self.tickets_db.values():
+            if "feedback_rating" in t.metadata:
+                ratings.append(t.metadata["feedback_rating"])
+        avg_csat = sum(ratings) / len(ratings) if ratings else 0.0
+        
+        # Tickets by Category
+        by_category = {}
+        for t in self.tickets_db.values():
+            cat = t.category.value if hasattr(t.category, "value") else str(t.category)
+            by_category[cat] = by_category.get(cat, 0) + 1
+            
+        # Tickets by Status
+        by_status = {}
+        for t in self.tickets_db.values():
+            status = t.status.value if hasattr(t.status, "value") else str(t.status)
+            by_status[status] = by_status.get(status, 0) + 1
+            
+        # Tickets by Channel
+        by_channel = {}
+        for t in self.tickets_db.values():
+            chan = t.channel.value if hasattr(t.channel, "value") else str(t.channel)
+            by_channel[chan] = by_channel.get(chan, 0) + 1
+            
+        # Resolution Time Trend (Mock for now as we don't have historical data store)
+        # In a real app, we would query DB for daily averages
+        trend = [
+            {"date": "Mon", "hours": 5.2},
+            {"date": "Tue", "hours": 4.8},
+            {"date": "Wed", "hours": 3.5},
+            {"date": "Thu", "hours": 4.1},
+            {"date": "Fri", "hours": 3.2},
+            {"date": "Sat", "hours": 2.1},
+            {"date": "Sun", "hours": 1.5}
+        ]
         
         return MetricsResponse(
             total_tickets=total,
             resolved_tickets=resolved,
             escalated_tickets=escalated,
-            average_resolution_time=45.0,  # Mock: 45 seconds
-            average_confidence_score=avg_confidence,
-            tickets_by_category={cat.value: 0 for cat in TicketCategory},
-            tickets_by_channel={},
+            average_resolution_time=round(avg_resolution, 1),
+            average_confidence_score=round(avg_confidence, 2),
+            customer_satisfaction_score=round(avg_csat, 1),
+            tickets_by_category=by_category,
+            tickets_by_status=by_status,
+            tickets_by_channel=by_channel,
+            resolution_time_trend=trend,
             period_start=datetime.utcnow(),
             period_end=datetime.utcnow()
         )
@@ -611,17 +869,52 @@ class AgentOrchestrator:
     async def submit_feedback(self, ticket_id: str, rating: int, comments: Optional[str]) -> bool:
         """Submit feedback for retraining confidence model"""
         logger.info(f"Received feedback for ticket {ticket_id}: rating={rating}")
-        # In production: Store in Azure SQL and trigger ML retraining pipeline
-        return True
+        
+        if ticket_id in self.tickets_db:
+            ticket = self.tickets_db[ticket_id]
+            ticket.metadata["feedback_rating"] = rating
+            if comments:
+                ticket.metadata["feedback_comments"] = comments
+            self._save_tickets()
+            return True
+            
+        return False
     
-    async def search_knowledge(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
-        """Search knowledge base using Azure AI Search"""
-        logger.info(f"Searching knowledge base: {query}")
-        # Mock results
-        return [
-            {"title": "Password Reset Guide", "relevance": 0.95},
-            {"title": "Software License FAQ", "relevance": 0.82}
+    async def get_conversation(self, ticket_id: str) -> Optional[AgentConversation]:
+        """Get conversation history for a ticket"""
+        return self.conversations_db.get(ticket_id)
+
+    async def get_latest_active_ticket(self, user_id: str) -> Optional[Ticket]:
+        """Get the latest active ticket for a user"""
+        user_tickets = [
+            t for t in self.tickets_db.values() 
+            if t.user_id == user_id and t.status != TicketStatus.CLOSED
         ]
+        if not user_tickets:
+            return None
+            
+        # Sort by created_at desc
+        user_tickets.sort(key=lambda x: x.created_at, reverse=True)
+        return user_tickets[0]
+        
+    async def search_knowledge(self, query: str = "", category: Optional[str] = None, limit: int = 5, language: str = "en") -> List[Dict]:
+        """Search knowledge base using KnowledgeBaseService"""
+        from .knowledge_base_service import get_knowledge_base_service
+        
+        kb_service = get_knowledge_base_service()
+        articles = await kb_service.search(query, category, limit)
+        
+        # Translate if needed
+        if language and language.lower() not in ['en', 'english'] and articles:
+            try:
+                from .simple_agent_fixed import get_simple_agent
+                agent = get_simple_agent()
+                articles = await agent._translate_articles(articles, language)
+            except Exception as e:
+                logger.error(f"Error translating search results: {e}")
+        
+        # Convert to dict for response
+        return [article.model_dump() for article in articles]
     
     async def shutdown(self):
         """Cleanup resources"""

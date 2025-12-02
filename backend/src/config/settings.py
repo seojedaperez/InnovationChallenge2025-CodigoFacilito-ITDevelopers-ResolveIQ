@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     AZURE_OPENAI_ENDPOINT: str = os.getenv("AZURE_OPENAI_ENDPOINT", "https://your-openai.openai.azure.com/")
     AZURE_OPENAI_API_KEY: Optional[str] = os.getenv("AZURE_OPENAI_API_KEY")
     AZURE_OPENAI_GPT4O_DEPLOYMENT: str = os.getenv("AZURE_OPENAI_GPT4O_DEPLOYMENT", "gpt-4o")
+    AZURE_OPENAI_API_VERSION: str = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
     AZURE_OPENAI_O1_DEPLOYMENT: str = os.getenv("AZURE_OPENAI_O1_DEPLOYMENT", "o1-preview")
     AZURE_OPENAI_EMBEDDING_DEPLOYMENT: str = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large")
     
@@ -99,6 +100,10 @@ class Settings(BaseSettings):
     ENABLE_PII_DETECTION: bool = True
     ENABLE_BIAS_TRACKING: bool = True
     ENABLE_AUDIT_LOGGING: bool = True
+
+    # Azure Communication Services (Email)
+    AZURE_COMMUNICATION_CONNECTION_STRING: Optional[str] = os.getenv("AZURE_COMMUNICATION_CONNECTION_STRING")
+    EMAIL_SENDER_ADDRESS: Optional[str] = os.getenv("EMAIL_SENDER_ADDRESS")
 
 
 settings = Settings()

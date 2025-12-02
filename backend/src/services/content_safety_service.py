@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from typing import Optional
 
 try:
@@ -70,68 +71,70 @@ class ContentSafetyService:
         Returns:
             ContentSafetyResult with scores and blocking decision
         """
-        if not self.client:
-            logger.warning("Content Safety client not available, defaulting to safe")
-            return self._mock_safe_result()
+        # Always run local checks first (works even without Azure)
+        jailbreak_detected = self._detect_jailbreak(text)
+        pii_detected = self._detect_pii(text)
         
-        try:
-            request = AnalyzeTextOptions(text=text)
-            
-            # Analyze with Azure Content Safety
-            response = self.client.analyze_text(request)
-            
-            # Extract category scores (0-6 severity scale)
-            hate_score = self._get_category_score(response, TextCategory.HATE)
-            self_harm_score = self._get_category_score(response, TextCategory.SELF_HARM)
-            sexual_score = self._get_category_score(response, TextCategory.SEXUAL)
-            violence_score = self._get_category_score(response, TextCategory.VIOLENCE)
-            
-            # Check for jailbreak attempts (custom logic)
-            jailbreak_detected = self._detect_jailbreak(text)
-            
-            # Check for PII
-            pii_detected = self._detect_pii(text)
-            
-            # Determine if content should be blocked (threshold: severity >= 4)
-            max_score = max(hate_score, self_harm_score, sexual_score, violence_score)
-            is_safe = max_score < 4 and not jailbreak_detected
-            
-            blocked_reason = None
-            if max_score >= 4:
-                categories = []
-                if hate_score >= 4:
-                    categories.append("hate speech")
-                if self_harm_score >= 4:
-                    categories.append("self-harm content")
-                if sexual_score >= 4:
-                    categories.append("sexual content")
-                if violence_score >= 4:
-                    categories.append("violent content")
-                blocked_reason = f"Blocked due to: {', '.join(categories)}"
-            elif jailbreak_detected:
-                blocked_reason = "Potential jailbreak attempt detected"
-            
-            result = ContentSafetyResult(
-                is_safe=is_safe,
-                hate_score=hate_score / 6.0,  # Normalize to 0-1
-                self_harm_score=self_harm_score / 6.0,
-                sexual_score=sexual_score / 6.0,
-                violence_score=violence_score / 6.0,
-                jailbreak_detected=jailbreak_detected,
-                pii_detected=pii_detected,
-                blocked_reason=blocked_reason
-            )
-            
-            logger.info(f"Content Safety analysis: is_safe={is_safe}, max_score={max_score}")
-            return result
-            
-        except Exception as e:
-            logger.error(f"Content Safety analysis failed: {e}")
-            # Fail closed - block on error for safety
-            return ContentSafetyResult(
-                is_safe=False,
-                blocked_reason=f"Content Safety service error: {str(e)}"
-            )
+        # Initialize default scores
+        hate_score = 0
+        self_harm_score = 0
+        sexual_score = 0
+        violence_score = 0
+        is_safe = True
+        blocked_reason = None
+
+        if self.client:
+            try:
+                request = AnalyzeTextOptions(text=text)
+                
+                # Analyze with Azure Content Safety
+                response = await asyncio.wait_for(asyncio.to_thread(self.client.analyze_text, request), timeout=2.0)
+                
+                # Extract category scores (0-6 severity scale)
+                hate_score = self._get_category_score(response, TextCategory.HATE)
+                self_harm_score = self._get_category_score(response, TextCategory.SELF_HARM)
+                sexual_score = self._get_category_score(response, TextCategory.SEXUAL)
+                violence_score = self._get_category_score(response, TextCategory.VIOLENCE)
+                
+            except Exception as e:
+                logger.error(f"Content Safety analysis failed: {e}")
+                # If Azure fails, we rely on local checks, but log the error
+        else:
+            logger.warning("Content Safety client not available, running local checks only")
+
+        # Determine if content should be blocked (threshold: severity >= 4)
+        max_score = max(hate_score, self_harm_score, sexual_score, violence_score)
+        
+        # Combine local and remote results
+        is_safe = max_score < 4 and not jailbreak_detected
+        
+        if max_score >= 4:
+            categories = []
+            if hate_score >= 4:
+                categories.append("hate speech")
+            if self_harm_score >= 4:
+                categories.append("self-harm content")
+            if sexual_score >= 4:
+                categories.append("sexual content")
+            if violence_score >= 4:
+                categories.append("violent content")
+            blocked_reason = f"Blocked due to: {', '.join(categories)}"
+        elif jailbreak_detected:
+            blocked_reason = "Potential jailbreak attempt detected"
+        
+        result = ContentSafetyResult(
+            is_safe=is_safe,
+            hate_score=hate_score / 6.0,  # Normalize to 0-1
+            self_harm_score=self_harm_score / 6.0,
+            sexual_score=sexual_score / 6.0,
+            violence_score=violence_score / 6.0,
+            jailbreak_detected=jailbreak_detected,
+            pii_detected=pii_detected,
+            blocked_reason=blocked_reason
+        )
+        
+        logger.info(f"Content Safety analysis: is_safe={is_safe}, max_score={max_score}, jailbreak={jailbreak_detected}")
+        return result
     
     def _get_category_score(self, response, category: TextCategory) -> int:
         """Extract severity score for a category"""

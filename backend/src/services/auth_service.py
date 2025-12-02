@@ -22,10 +22,10 @@ class AuthService:
     _jwks = None
 
     @classmethod
-    def get_jwks(cls):
+    def get_jwks(cls, jwks_url: str):
         if not cls._jwks:
             try:
-                response = requests.get(JWKS_URL)
+                response = requests.get(jwks_url)
                 response.raise_for_status()
                 cls._jwks = response.json()
             except Exception as e:
@@ -35,13 +35,26 @@ class AuthService:
 
     @classmethod
     def validate_token(cls, token: str) -> dict:
-        if not TENANT_ID or not CLIENT_ID:
+        tenant_id = os.getenv("AZURE_AD_TENANT_ID")
+        client_id = os.getenv("AZURE_AD_CLIENT_ID")
+        
+        if not tenant_id or not client_id:
             # If auth is not configured, skip validation (DEV ONLY)
             # In production, this should raise an error
-            logger.warning("Azure AD not configured. Skipping token validation.")
+            logger.warning("Azure AD not configured (env vars missing). Skipping token validation.")
             return {"sub": "dev-user", "name": "Dev User", "email": "dev@local"}
 
-        jwks = cls.get_jwks()
+        authority = f"https://login.microsoftonline.com/{tenant_id}"
+        issuer = f"https://login.microsoftonline.com/{tenant_id}/v2.0"
+        
+        # Fetch JWKS if needed (using the authority)
+        # Note: We might need to update JWKS_URL dynamically if tenant changes, 
+        # but for now we assume single tenant or we need to refactor get_jwks.
+        # For simplicity, let's assume JWKS_URL is also dynamic or we just use the global one 
+        # if it was set correctly, but since we are fixing import time issues:
+        jwks_url = f"{authority}/discovery/v2.0/keys"
+
+        jwks = cls.get_jwks(jwks_url)
         
         try:
             # Get the key id from the header
@@ -65,8 +78,8 @@ class AuthService:
                 token,
                 rsa_key,
                 algorithms=["RS256"],
-                audience=CLIENT_ID, # Verify the token is for this app
-                issuer=ISSUER,      # Verify the token is from our tenant
+                audience=client_id, # Verify the token is for this app
+                issuer=issuer,      # Verify the token is from our tenant
                 options={
                     "verify_signature": True,
                     "verify_aud": True,

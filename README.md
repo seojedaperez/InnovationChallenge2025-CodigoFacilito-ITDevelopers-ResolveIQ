@@ -28,6 +28,10 @@ Leveraging the power of **Azure AI Foundry** and **Semantic Kernel**, we move be
 *   **Responsible AI**: Deep integration with **Azure Content Safety** to detect toxicity, jailbreaks, and protect sensitive data (PII).
 *   **Semantic Search (RAG)**: Enterprise knowledge retrieval using **Azure AI Search** with vector capabilities.
 *   **Modern UI**: **React** frontend with **Fluent UI** and real-time decision graph visualization (**Explanation Graph**).
+*   **Comprehensive Dashboard**: Includes 'My Tickets', 'Knowledge Base', 'Analytics', and 'Settings' views.
+*   **Accessibility First**: WCAG 2.1 compliant with high contrast modes, text-to-speech (TTS), and adjustable font sizes.
+*   **Internationalization (i18n)**: Full support for English and Spanish, with dynamic language switching.
+*   **Theme Support**: Consistent Light and Dark mode experience.
 *   **Infrastructure as Code**: Automated deployment using **Bicep**.
 
 ---

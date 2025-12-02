@@ -1,0 +1,469 @@
+[
+  {
+    "id": "027cd3eb-6b5d-471f-90ed-59503be107db",
+    "ticket_id": "cc4b36f1-6fb6-41b0-9c64-fae9967ac3e9",
+    "thread_id": "2fbbb1aa-20a6-4f31-8456-6fa9ad5ed540",
+    "messages": [
+      {
+        "agent_type": "safety",
+        "content": "Safety check completed: SAFE",
+        "timestamp": "2025-11-30T00:15:13.455769",
+        "confidence": 1.0,
+        "reasoning": null,
+        "actions_taken": []
+      },
+      {
+        "agent_type": "router",
+        "content": "Ticket categorized as: it_support",
+        "timestamp": "2025-11-30T00:15:13.455769",
+        "confidence": 0.92,
+        "reasoning": "Based on keyword analysis and semantic understanding",
+        "actions_taken": []
+      }
+    ],
+    "created_at": "2025-11-30T00:15:13.455769"
+  },
+  {
+    "id": "01460df6-ae62-44b8-bb88-bbf22b76c5c2",
+    "ticket_id": "9b635399-2e4d-4ac8-a28a-a4c6401feafb",
+    "thread_id": "4b0679c4-8da9-484f-9dfe-e22b7f4c582b",
+    "messages": [
+      {
+        "agent_type": "safety",
+        "content": "Safety check completed: SAFE",
+        "timestamp": "2025-11-30T00:19:28.401918",
+        "confidence": 1.0,
+        "reasoning": null,
+        "actions_taken": []
+      },
+      {
+        "agent_type": "router",
+        "content": "Ticket categorized as: multi (legal, finance)",
+        "timestamp": "2025-11-30T00:19:28.401918",
+        "confidence": 0.92,
+        "reasoning": "Based on keyword analysis and semantic understanding",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "legal_specialist",
+        "content": "[LEGAL] I've received your request.",
+        "timestamp": "2025-11-30T00:19:28.401918",
+        "confidence": 0.9,
+        "reasoning": "Handling legal part of multi-intent request",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "finance_specialist",
+        "content": "[FINANCE] I've received your request.",
+        "timestamp": "2025-11-30T00:19:28.401918",
+        "confidence": 0.9,
+        "reasoning": "Handling finance part of multi-intent request",
+        "actions_taken": []
+      }
+    ],
+    "created_at": "2025-11-30T00:19:27.047007"
+  },
+  {
+    "id": "95f31c82-dd14-4ad5-8510-eea6581cdf59",
+    "ticket_id": "37433b52-b090-44f2-9444-0670e5ff968c",
+    "thread_id": "112e25e1-7849-45c2-b55e-9dabef15ccb7",
+    "messages": [
+      {
+        "agent_type": "safety",
+        "content": "Safety check completed: SAFE",
+        "timestamp": "2025-11-30T00:19:42.348317",
+        "confidence": 1.0,
+        "reasoning": null,
+        "actions_taken": []
+      },
+      {
+        "agent_type": "router",
+        "content": "Ticket categorized as: facilities",
+        "timestamp": "2025-11-30T00:19:42.348317",
+        "confidence": 0.92,
+        "reasoning": "Based on keyword analysis and semantic understanding",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "facilities_specialist",
+        "content": "I've received your facilities request. I'll check room availability for you.",
+        "timestamp": "2025-11-30T00:19:42.348317",
+        "confidence": 0.85,
+        "reasoning": "Processed as facilities using domain-specific knowledge",
+        "actions_taken": [
+          "Analyzed request",
+          "Checked knowledge base"
+        ]
+      }
+    ],
+    "created_at": "2025-11-30T00:19:42.155759"
+  },
+  {
+    "id": "ad964431-1aea-4ff3-945d-e308c020e716",
+    "ticket_id": "e1cc0056-f836-4da7-bc6b-a047f9051a94",
+    "thread_id": "477caadf-ab7d-441f-8920-f070eb3f21e9",
+    "messages": [
+      {
+        "agent_type": "safety",
+        "content": "Safety check completed: SAFE",
+        "timestamp": "2025-11-30T00:23:03.260991",
+        "confidence": 1.0,
+        "reasoning": null,
+        "actions_taken": []
+      },
+      {
+        "agent_type": "router",
+        "content": "Ticket categorized as: finance",
+        "timestamp": "2025-11-30T00:23:03.261567",
+        "confidence": 0.92,
+        "reasoning": "Based on keyword analysis and semantic understanding",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "finance_specialist",
+        "content": "I've processed your finance request. I'll verify the invoice status in our ERP system.",
+        "timestamp": "2025-11-30T00:23:03.261567",
+        "confidence": 0.85,
+        "reasoning": "Processed as finance using domain-specific knowledge",
+        "actions_taken": [
+          "Analyzed request",
+          "Checked knowledge base"
+        ]
+      }
+    ],
+    "created_at": "2025-11-30T00:23:01.825626"
+  },
+  {
+    "id": "b39e58e8-eaf7-45aa-a2e0-9388e04217f9",
+    "ticket_id": "37ad9524-3627-4fd8-b1c9-2774d8bc45e2",
+    "thread_id": "17456d81-4213-4eec-a102-d209a241b4eb",
+    "messages": [
+      {
+        "agent_type": "safety",
+        "content": "Safety check completed: SAFE",
+        "timestamp": "2025-11-30T00:23:16.239397",
+        "confidence": 1.0,
+        "reasoning": null,
+        "actions_taken": []
+      },
+      {
+        "agent_type": "router",
+        "content": "Ticket categorized as: finance",
+        "timestamp": "2025-11-30T00:23:16.239397",
+        "confidence": 0.92,
+        "reasoning": "Based on keyword analysis and semantic understanding",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "finance_specialist",
+        "content": "I've processed your finance request. I'll verify the invoice status in our ERP system.",
+        "timestamp": "2025-11-30T00:23:16.239397",
+        "confidence": 0.85,
+        "reasoning": "Processed as finance using domain-specific knowledge",
+        "actions_taken": [
+          "Analyzed request",
+          "Checked knowledge base"
+        ]
+      }
+    ],
+    "created_at": "2025-11-30T00:23:16.021400"
+  },
+  {
+    "id": "e4688675-2912-48a4-b37f-cdc64acd68f7",
+    "ticket_id": "a41a2888-535c-480b-b1c4-b47d0a16e23f",
+    "thread_id": "bec92564-9c2e-4f4a-b8e4-3038824e0349",
+    "messages": [
+      {
+        "agent_type": "safety",
+        "content": "Safety check completed: SAFE",
+        "timestamp": "2025-11-30T00:25:13.098927",
+        "confidence": 1.0,
+        "reasoning": null,
+        "actions_taken": []
+      },
+      {
+        "agent_type": "router",
+        "content": "Ticket categorized as: finance",
+        "timestamp": "2025-11-30T00:25:13.098927",
+        "confidence": 0.92,
+        "reasoning": "Based on keyword analysis and semantic understanding",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "finance_specialist",
+        "content": "I've processed your finance request. I'll verify the invoice status in our ERP system.",
+        "timestamp": "2025-11-30T00:25:13.098927",
+        "confidence": 0.85,
+        "reasoning": "Processed as finance using domain-specific knowledge",
+        "actions_taken": [
+          "Analyzed request",
+          "Checked knowledge base"
+        ]
+      }
+    ],
+    "created_at": "2025-11-30T00:25:12.886128"
+  },
+  {
+    "id": "26d2b806-0ba0-46e8-b1cc-00ae56dc4e25",
+    "ticket_id": "8429b772-854e-4c30-8150-e989f05890e9",
+    "thread_id": "b10e2fc6-9cef-4692-bbca-16f0a5a79b28",
+    "messages": [
+      {
+        "agent_type": "safety",
+        "content": "Safety check completed: SAFE",
+        "timestamp": "2025-11-30T00:25:29.072731",
+        "confidence": 1.0,
+        "reasoning": null,
+        "actions_taken": []
+      },
+      {
+        "agent_type": "router",
+        "content": "Ticket categorized as: finance",
+        "timestamp": "2025-11-30T00:25:29.072731",
+        "confidence": 0.92,
+        "reasoning": "Based on keyword analysis and semantic understanding",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "finance_specialist",
+        "content": "I've processed your finance request. I'll verify the invoice status in our ERP system.",
+        "timestamp": "2025-11-30T00:25:29.072731",
+        "confidence": 0.85,
+        "reasoning": "Processed as finance using domain-specific knowledge",
+        "actions_taken": [
+          "Analyzed request",
+          "Checked knowledge base"
+        ]
+      }
+    ],
+    "created_at": "2025-11-30T00:25:28.880041"
+  },
+  {
+    "id": "2ab89889-d2f6-4aa4-bb46-0fe8a7890bca",
+    "ticket_id": "7539d465-30a7-4d1a-8b62-c984c8541d4d",
+    "thread_id": "7674ddde-9bc9-4e32-963c-e549f208dc15",
+    "messages": [
+      {
+        "agent_type": "safety",
+        "content": "Safety check completed: SAFE",
+        "timestamp": "2025-11-30T00:27:55.760480",
+        "confidence": 1.0,
+        "reasoning": null,
+        "actions_taken": []
+      },
+      {
+        "agent_type": "router",
+        "content": "Ticket categorized as: finance",
+        "timestamp": "2025-11-30T00:27:55.760480",
+        "confidence": 0.92,
+        "reasoning": "Based on keyword analysis and semantic understanding",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "finance_specialist",
+        "content": "I've processed your finance request. I'll verify the invoice status in our ERP system.",
+        "timestamp": "2025-11-30T00:27:55.760480",
+        "confidence": 0.85,
+        "reasoning": "Processed as finance using domain-specific knowledge",
+        "actions_taken": [
+          "Analyzed request",
+          "Checked knowledge base"
+        ]
+      }
+    ],
+    "created_at": "2025-11-30T00:27:54.635431"
+  },
+  {
+    "id": "3eb632a6-5b71-4511-abd5-e217513e4246",
+    "ticket_id": "a87dbe3f-d441-4bce-929f-a20c6df587ef",
+    "thread_id": "40561ec3-8e4c-4871-a310-a308a9aa9245",
+    "messages": [
+      {
+        "agent_type": "safety",
+        "content": "Safety check completed: SAFE",
+        "timestamp": "2025-11-30T00:27:58.571497",
+        "confidence": 1.0,
+        "reasoning": null,
+        "actions_taken": []
+      },
+      {
+        "agent_type": "router",
+        "content": "Ticket categorized as: finance",
+        "timestamp": "2025-11-30T00:27:58.571497",
+        "confidence": 0.92,
+        "reasoning": "Based on keyword analysis and semantic understanding",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "finance_specialist",
+        "content": "I've processed your finance request. I'll verify the invoice status in our ERP system.",
+        "timestamp": "2025-11-30T00:27:58.571497",
+        "confidence": 0.85,
+        "reasoning": "Processed as finance using domain-specific knowledge",
+        "actions_taken": [
+          "Analyzed request",
+          "Checked knowledge base"
+        ]
+      }
+    ],
+    "created_at": "2025-11-30T00:27:58.366390"
+  },
+  {
+    "id": "13728b42-05d8-4f4a-af27-71948f992116",
+    "ticket_id": "296a253d-8bd7-4ee4-b855-ac0f869e6b2d",
+    "thread_id": "9d0bf5b4-b92f-4c07-8909-5e2bc28195af",
+    "messages": [
+      {
+        "agent_type": "safety",
+        "content": "Safety check completed: SAFE",
+        "timestamp": "2025-11-30T00:29:19.746693",
+        "confidence": 1.0,
+        "reasoning": null,
+        "actions_taken": []
+      },
+      {
+        "agent_type": "router",
+        "content": "Ticket categorized as: finance",
+        "timestamp": "2025-11-30T00:29:19.746693",
+        "confidence": 0.92,
+        "reasoning": "Based on keyword analysis and semantic understanding",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "finance_specialist",
+        "content": "I've processed your finance request. I'll verify the invoice status in our ERP system.",
+        "timestamp": "2025-11-30T00:29:19.746693",
+        "confidence": 0.85,
+        "reasoning": "Processed as finance using domain-specific knowledge",
+        "actions_taken": [
+          "Analyzed request",
+          "Checked knowledge base"
+        ]
+      }
+    ],
+    "created_at": "2025-11-30T00:29:19.545609"
+  },
+  {
+    "id": "e5a5f3ba-fdf5-436d-a970-9d217bb4bf2e",
+    "ticket_id": "62db3ec0-6124-4396-82b9-818f3995a0cb",
+    "thread_id": "23749306-de39-47ec-8662-19f8ac9b9ff2",
+    "messages": [
+      {
+        "agent_type": "safety",
+        "content": "Safety check completed: SAFE",
+        "timestamp": "2025-11-30T00:29:26.867684",
+        "confidence": 1.0,
+        "reasoning": null,
+        "actions_taken": []
+      },
+      {
+        "agent_type": "router",
+        "content": "Ticket categorized as: multi (finance, legal)",
+        "timestamp": "2025-11-30T00:29:26.867684",
+        "confidence": 0.92,
+        "reasoning": "Based on keyword analysis and semantic understanding",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "finance_specialist",
+        "content": "[FINANCE] I've received your request.",
+        "timestamp": "2025-11-30T00:29:26.868199",
+        "confidence": 0.9,
+        "reasoning": "Handling finance part of multi-intent request",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "legal_specialist",
+        "content": "[LEGAL] I've received your request.",
+        "timestamp": "2025-11-30T00:29:26.868199",
+        "confidence": 0.9,
+        "reasoning": "Handling legal part of multi-intent request",
+        "actions_taken": []
+      }
+    ],
+    "created_at": "2025-11-30T00:29:26.670441"
+  },
+  {
+    "id": "e5cb3b50-e2d7-4074-8165-edc7f63830b4",
+    "ticket_id": "75a17b8a-02a9-40c6-be18-da7ab1f78633",
+    "thread_id": "c7797acf-9e99-4342-bc66-47a48bf79fec",
+    "messages": [
+      {
+        "agent_type": "safety",
+        "content": "Safety check completed: SAFE",
+        "timestamp": "2025-11-30T00:36:07.396301",
+        "confidence": 1.0,
+        "reasoning": null,
+        "actions_taken": []
+      },
+      {
+        "agent_type": "router",
+        "content": "Ticket categorized as: multi (finance, legal)",
+        "timestamp": "2025-11-30T00:36:07.396301",
+        "confidence": 0.92,
+        "reasoning": "Based on keyword analysis and semantic understanding",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "finance_specialist",
+        "content": "[FINANCE] I've received your request.",
+        "timestamp": "2025-11-30T00:36:07.397305",
+        "confidence": 0.9,
+        "reasoning": "Handling finance part of multi-intent request",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "legal_specialist",
+        "content": "[LEGAL] I've received your request.",
+        "timestamp": "2025-11-30T00:36:07.397305",
+        "confidence": 0.9,
+        "reasoning": "Handling legal part of multi-intent request",
+        "actions_taken": []
+      }
+    ],
+    "created_at": "2025-11-30T00:36:05.561323"
+  },
+  {
+    "id": "a06ed6d8-e767-4621-8ce9-01476d694aa9",
+    "ticket_id": "2244a3c4-483b-4e48-a4b8-ca89a03f3838",
+    "thread_id": "4233b246-3cc8-4ded-bd79-c899cf553000",
+    "messages": [
+      {
+        "agent_type": "safety",
+        "content": "Safety check completed: SAFE",
+        "timestamp": "2025-11-30T01:14:09.097396",
+        "confidence": 1.0,
+        "reasoning": null,
+        "actions_taken": []
+      },
+      {
+        "agent_type": "router",
+        "content": "Ticket categorized as: unknown",
+        "timestamp": "2025-11-30T01:14:09.098396",
+        "confidence": 0.92,
+        "reasoning": "Based on keyword analysis and semantic understanding",
+        "actions_taken": []
+      },
+      {
+        "agent_type": "it_specialist",
+        "content": "I'll help you with your request.",
+        "timestamp": "2025-11-30T01:14:09.098396",
+        "confidence": 0.85,
+        "reasoning": "Processed as unknown using domain-specific knowledge",
+        "actions_taken": [
+          "Analyzed request",
+          "Checked knowledge base"
+        ]
+      },
+      {
+        "agent_type": "planner",
+        "content": "Requesting clarification from user due to missing details.",
+        "timestamp": "2025-11-30T01:14:09.098396",
+        "confidence": 0.6,
+        "reasoning": "Ambiguous request or missing parameters",
+        "actions_taken": []
+      }
+    ],
+    "created_at": "2025-11-30T01:14:07.724228"
+  }
+]
