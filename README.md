@@ -1,89 +1,89 @@
-# ResolveIQ - Plataforma de Servicio al Cliente con IA Autónoma
+# ResolveIQ - Autonomous AI Customer Service Platform
 
-ResolveIQ es una solución de mesa de ayuda inteligente que utiliza agentes de IA autónomos, orquestación avanzada y servicios cognitivos de Azure para revolucionar la atención al cliente y el soporte interno.
+ResolveIQ is an intelligent helpdesk solution that uses autonomous AI agents, advanced orchestration, and Azure cognitive services to revolutionize customer support and internal assistance.
 
-## 🚀 Tecnologías y Arquitectura
+## 🚀 Technologies and Architecture
 
-El sistema está construido sobre una arquitectura moderna de microservicios, separando claramente el frontend del backend, y apoyándose fuertemente en la nube de Azure para las capacidades cognitivas.
+The system is built on a modern microservices architecture, clearly separating the frontend from the backend, and heavily relying on the Azure cloud for its cognitive capabilities.
 
-### 🧠 Funcionalidades Específicas y Sus Tecnologías
+### 🧠 Specific Functionalities and Their Technologies
 
-A continuación se detalla qué tecnología específica impulsa cada capacidad clave del sistema:
+The following table details which specific technology powers each key capability of the system:
 
-| Funcionalidad | Tecnología / Librería | Descripción Técnica |
+| Functionality | Technology / Library | Technical Description |
 |---------------|----------------------|---------------------|
-| **Traductor de Textos** | **Azure OpenAI (GPT-4o)** | El modelo LLM detecta y genera respuestas en el idioma del usuario nativamente. |
-| **Traductor de Artículos** | **Azure OpenAI (GPT-4o)** | Resumen y traducción dinámica de documentos de la base de conocimiento bajo demanda. |
-| **Voz a Texto (STT)** | **Web Speech API / Azure Speech SDK** | Utiliza la API nativa del navegador para baja latencia, con soporte integrado para `microsoft-cognitiveservices-speech-sdk`. |
-| **Texto a Voz (TTS)** | **Web Speech API** | Síntesis de voz en tiempo real utilizando las capacidades del navegador del usuario. |
-| **Login de Usuario** | **Azure AD + MSAL** | Autenticación segura mediante Microsoft Authentication Library (`@azure/msal-react`) contra Azure Active Directory. |
-| **Imagen a Texto (OCR)** | **GPT-4o Vision** | Análisis multimodal de imágenes para extraer texto y contexto visual. |
-| **Word/PDF a Texto** | **python-docx / pypdf** | Procesamiento de documentos en el backend para extracción de contenido y posterior análisis por IA. |
-| **Detección de IP/País** | **ipapi.co** | API externa consumida desde el frontend para geolocalización del usuario. |
-| **Bloqueo de Palabras** | **Azure Content Safety** | Filtro de severidad para odio, violencia, sexual y autolesiones. |
-| **Envío de Correos** | **Azure Communication Services** | Envío programático de notificaciones por correo electrónico mediante `azure-communication-email`. |
-| **Detección de Jailbreak** | **LLM Evaluator + Regex** | Sistema híbrido: Patrones regex locales + un agente evaluador LLM dedicado para intentos complejos. |
-| **Detección de Jailbreak** | **LLM Evaluator + Regex** | Sistema híbrido: Patrones regex locales + un agente evaluador LLM dedicado para intentos complejos. |
-| **Orquestación** | **Azure AI Foundry + Semantic Kernel** | Gestión del ciclo de vida de los agentes y planificación de tareas complejas. |
-| **Estabilidad y Resiliencia** | **AsyncIO + Tenacity Pattern** | Arquitectura no bloqueante con lógica de reintentos inteligente y backoff exponencial para servicios externos. |
+| **Text Translator** | **Azure OpenAI (GPT-4o)** | The LLM model detects and generates responses natively in the user's language. |
+| **Article Translator** | **Azure OpenAI (GPT-4o)** | Dynamic summarization and translation of knowledge base documents on demand. |
+| **Speech-to-Text (STT)** | **Web Speech API / Azure Speech SDK** | Uses the browser's native API for low latency, with built-in support for `microsoft-cognitiveservices-speech-sdk`. |
+| **Text-to-Speech (TTS)** | **Web Speech API** | Real-time speech synthesis using the user's browser capabilities. |
+| **User Login** | **Azure AD + MSAL** | Secure authentication via the Microsoft Authentication Library (`@azure/msal-react`) against Azure Active Directory. |
+| **Image-to-Text (OCR)** | **GPT-4o Vision** | Multimodal analysis of images to extract text and visual context. |
+| **Word/PDF to Text** | **python-docx / pypdf** | Backend document processing for content extraction and subsequent AI analysis. |
+| **IP/Country Detection** | **ipapi.co** | External API consumed from the frontend for user geolocation. |
+| **Word Blocking** | **Azure Content Safety** | Severity filter for hate, violence, sexual, and self-harm content. |
+| **Email Sending** | **Azure Communication Services** | Programmatic sending of email notifications via `azure-communication-email`. |
+| **Jailbreak Detection** | **LLM Evaluator + Regex** | Hybrid system: Local regex patterns + a dedicated LLM evaluator agent for complex attempts. |
+| **Jailbreak Detection** | **LLM Evaluator + Regex** | Hybrid system: Local regex patterns + a dedicated LLM evaluator agent for complex attempts. |
+| **Orchestration** | **Azure AI Foundry + Semantic Kernel** | Management of the agent lifecycle and planning of complex tasks. |
+| **Stability and Resilience** | **AsyncIO + Tenacity Pattern** | Non-blocking architecture with intelligent retry logic and exponential backoff for external services. |
 
 ---
 
-### 💻 Frontend (Cliente)
+### 💻 Frontend (Client)
 
-Desarrollado con **React** y **TypeScript**, enfocado en una experiencia de usuario premium y accesible.
+Developed with **React** and **TypeScript**, focused on a premium and accessible user experience.
 
 *   **Core:** React 18, TypeScript, Vite (Build tool).
 *   **UI/UX:**
-    *   `@fluentui/react-components`: Sistema de diseño oficial de Microsoft.
-    *   `framer-motion`: Animaciones fluidas y transiciones.
-    *   `three`: Renderizado de elementos 3D (Particle Head).
-    *   `reactflow`: Visualización de grafos de razonamiento en tiempo real.
-*   **Estado y Datos:**
-    *   `@tanstack/react-query`: Gestión de estado asíncrono y caché.
-    *   `axios`: Cliente HTTP.
-*   **Seguridad:**
-    *   `@azure/msal-browser` & `@azure/msal-react`: Gestión de tokens e identidad.
+    *   `@fluentui/react-components`: Microsoft's official design system.
+    *   `framer-motion`: Fluid animations and transitions.
+    *   `three`: 3D element rendering (Particle Head).
+    *   `reactflow`: Real-time reasoning graph visualization.
+*   **State and Data:**
+    *   `@tanstack/react-query`: Asynchronous state management and caching.
+    *   `axios`: HTTP client.
+*   **Security:**
+    *   `@azure/msal-browser` & `@azure/msal-react`: Token and identity management.
 
-### 🔧 Backend (Servidor)
+### 🔧 Backend (Server)
 
-API RESTful de alto rendimiento construida con **Python** y **FastAPI**.
+High-performance RESTful API built with **Python** and **FastAPI**.
 
 *   **Core:** Python 3.11+, FastAPI, Uvicorn.
-*   **IA y Procesamiento:**
-    *   `openai`: Cliente oficial para modelos GPT.
-    *   `azure-ai-contentsafety`: SDK para moderación de contenido.
-    *   `azure-search-documents`: Búsqueda vectorial y semántica (RAG).
-    *   `semantic-kernel`: Framework de orquestación de IA.
-*   **Datos y Almacenamiento:**
-    *   `azure-cosmos`: Base de datos NoSQL para tickets y conversaciones.
-    *   `redis`: Caché de alto rendimiento para sesiones y respuestas frecuentes.
-*   **Procesamiento de Archivos:**
-    *   `python-docx`: Parsing de archivos Word.
-    *   `pypdf`: Extracción de texto de PDFs.
-*   **Seguridad:**
-    *   `python-jose`: Validación y decodificación de tokens JWT (Azure AD).
-    *   `azure-identity`: Gestión de credenciales e identidades gestionadas.
+*   **AI and Processing:**
+    *   `openai`: Official client for GPT models.
+    *   `azure-ai-contentsafety`: SDK for content moderation.
+    *   `azure-search-documents`: Vector and semantic search (RAG).
+    *   `semantic-kernel`: AI orchestration framework.
+*   **Data and Storage:**
+    *   `azure-cosmos`: Globally distributed NoSQL database for tickets and conversations.
+    *   `redis`: High-performance cache for sessions and frequent responses.
+*   **File Processing:**
+    *   `python-docx`: Word file parsing.
+    *   `pypdf`: Text extraction from PDFs.
+*   **Security:**
+    *   `python-jose`: Validation and decoding of JWT tokens (Azure AD).
+    *   `azure-identity`: Managed credentials and identity management.
 
-### ☁️ Infraestructura Azure
+### ☁️ Azure Infrastructure
 
-El despliegue utiliza servicios PaaS para escalabilidad y mantenimiento cero.
+The deployment uses PaaS services for scalability and zero maintenance.
 
-1.  **Azure OpenAI Service:** Motor de inteligencia (Modelos GPT-4o, o1-preview).
-2.  **Azure AI Search:** Base de conocimiento vectorial para RAG (Retrieval-Augmented Generation).
-3.  **Azure Cosmos DB:** Persistencia de datos globalmente distribuida.
-4.  **Azure Content Safety:** Capa de seguridad y moderación en tiempo real.
-5.  **Azure Monitor / App Insights:** Observabilidad y trazas distribuidas.
+1.  **Azure OpenAI Service:** The intelligence engine (GPT-4o, o1-preview models).
+2.  **Azure AI Search:** Vector knowledge base for RAG (Retrieval-Augmented Generation).
+3.  **Azure Cosmos DB:** Globally distributed data persistence.
+4.  **Azure Content Safety:** Real-time security and moderation layer.
+5.  **Azure Monitor / App Insights:** Observability and distributed tracing.
 
-## 🛡️ Seguridad y Cumplimiento
+## 🛡️ Security and Compliance
 
-*   **Autenticación:** Flujo OAuth 2.0 / OIDC completo.
-*   **Validación de Datos:** Pydantic para esquemas estrictos en backend.
-*   **Protección de Contenido:** Doble capa de verificación (Azure Service + LLM Check) antes de procesar cualquier input.
+*   **Authentication:** Full OAuth 2.0 / OIDC flow.
+*   **Data Validation:** Pydantic for strict schemas in the backend.
+*   **Content Protection:** Double-layer verification (Azure Service + LLM Check) before processing any input.
 
-## 📦 Instalación Local
+## 📦 Local Installation
 
-1.  **Clonar el repositorio.**
+1.  **Clone the repository.**
 2.  **Backend:**
     ```bash
     cd backend
