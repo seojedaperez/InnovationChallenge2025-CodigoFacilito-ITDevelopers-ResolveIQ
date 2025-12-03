@@ -17,13 +17,9 @@ from ..services.observability import setup_observability, trace_request
 from ..services.document_service import DocumentService
 from fastapi import UploadFile, File
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO if not settings.DEBUG else logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
@@ -101,12 +97,13 @@ async def add_process_time_header(request: Request, call_next):
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler"""
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    logger.error(f"Unhandled exception at {request.method} {request.url}: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
         content={
             "error": "Internal server error",
             "message": str(exc) if settings.DEBUG else "An unexpected error occurred",
+            "path": str(request.url),
             "timestamp": datetime.utcnow().isoformat()
         }
     )
@@ -431,7 +428,6 @@ async def chat(request: ChatRequest):
         message = request.message
         
         logger.info(f"Chat request from user {user_id}: {message[:100]}")
-        # print(f"DEBUG: Request payload: language='{request.language}', message='{message[:20]}...'")
         
         # Get simple agent instance
         agent = get_simple_agent()
@@ -471,7 +467,12 @@ async def chat(request: ChatRequest):
 
         # In a real scenario, we would use the orchestrator or storage service
         # For this fix, we'll inject it into the orchestrator's memory if available
-        if orchestrator:
+        # CRITICAL FIX: Do not create ticket if blocked (SECURITY category)
+        if orchestrator and category_enum != TicketCategory.IT_SUPPORT and category_str != "SECURITY":
+             # Note: We mapped SECURITY to IT_SUPPORT above for Enum compatibility, but we check category_str here
+             pass
+
+        if orchestrator and category_str != "SECURITY" and result.get("ticket_id"):
             new_ticket = Ticket(
                 id=ticket_id,
                 user_id=user_id,
@@ -488,6 +489,8 @@ async def chat(request: ChatRequest):
             )
             orchestrator.tickets_db[ticket_id] = new_ticket
             logger.info(f"Ticket {ticket_id} created and saved to memory")
+        else:
+            logger.info(f"Skipping ticket creation for blocked/security content: {category_str}")
 
         # Return structured response
         return {
@@ -496,6 +499,7 @@ async def chat(request: ChatRequest):
             "response": result["response"],
             "confidence": result["confidence"],
             "category": result["category"],
+            "categories": result.get("categories", [result["category"]]),
             "intent": result["intent"],
             "can_auto_resolve": result["can_auto_resolve"],
             "reasoning": result["reasoning"],
@@ -524,7 +528,7 @@ async def chat(request: ChatRequest):
                     },
                     {
                         "id": "3", 
-                        "label": f"Classification: {result['category']}", 
+                        "label": f"Classification: {', '.join(result.get('categories', [result['category']]))}", 
                         "type": "decision",
                         "details": f"Confidence: {result['confidence']:.1%}"
                     },

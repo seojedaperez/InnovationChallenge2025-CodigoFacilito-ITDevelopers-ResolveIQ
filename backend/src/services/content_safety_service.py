@@ -106,7 +106,7 @@ class ContentSafetyService:
         max_score = max(hate_score, self_harm_score, sexual_score, violence_score)
         
         # Combine local and remote results
-        is_safe = max_score < 4 and not jailbreak_detected
+        is_safe = max_score < 4 and not jailbreak_detected and not pii_detected
         
         if max_score >= 4:
             categories = []
@@ -121,6 +121,8 @@ class ContentSafetyService:
             blocked_reason = f"Blocked due to: {', '.join(categories)}"
         elif jailbreak_detected:
             blocked_reason = "Potential jailbreak attempt detected"
+        elif pii_detected:
+            blocked_reason = "PII detected in content"
         
         result = ContentSafetyResult(
             is_safe=is_safe,
@@ -180,7 +182,62 @@ class ContentSafetyService:
             "dime como", # No accent
             "como hackear",
             "como robar",
-            "como borrar"
+            "como borrar",
+            # Enhanced Spanish patterns
+            "modo desarrollador",
+            "modo dan",
+            "dime cómo",
+            "dime como",
+            "como hackear",
+            "como robar",
+            "como borrar",
+            "actúa como",
+            "actua como",
+            "ahora eres",
+            "tu eres",
+            "ignora las reglas",
+            "sin restricciones",
+            "modo libre",
+            "modo dios",
+            "generar código malicioso",
+            "crear virus",
+            "bypass",
+            "saltar seguridad",
+            "dame acceso",
+            "tengo derechos",
+            "modo debug",
+            "debug mode",
+            "system override",
+            "anular sistema",
+            "ignorad",
+            "olvidad",
+            "desactivar seguridad",
+            "disable security",
+            "no ethics",
+            "sin etica",
+            "no ethics",
+            "limitations",
+            "restricciones",
+            "reglas de seguridad",
+            "security rules",
+            "override",
+            "anular",
+            "ignorar",
+            "ignore",
+            "olvidar",
+            "forget",
+            "acceso total",
+            "full access",
+            "root access",
+            "acceso root",
+            "admin access",
+            "acceso admin",
+            "modo administrador",
+            "administrator mode",
+            "system prompt",
+            "prompt del sistema",
+            "instrucciones originales",
+            "original instructions" 
         ]
         
         text_lower = text.lower()
@@ -228,7 +285,9 @@ class ContentSafetyService:
         
         patterns = [
             r'\b\d{3}-\d{2}-\d{4}\b',  # SSN
-            r'\b\d{16}\b',  # Credit card
+            r'\b(?:\d[ -]*?){13,19}\b',  # Credit card (robust)
+            r'\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b', # Explicit 16 digit format
+            r'\b\d{4}[ -]?\d{6}[ -]?\d{5}\b', # Amex format
             r'\b[A-Z]{2}\d{6,8}\b',  # Passport-like
         ]
         

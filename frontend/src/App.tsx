@@ -56,7 +56,6 @@ const createScaledTheme = (baseTheme: Theme, scale: number): Theme => {
 };
 
 const App: React.FC = () => {
-  console.log('DEBUG: App rendering');
   const { theme, accessibility } = useSettings();
 
   const activeTheme = useMemo(() => {
@@ -75,12 +74,11 @@ const App: React.FC = () => {
   return (
     <FluentProvider theme={activeTheme}>
       <UnauthenticatedTemplate>
-        {console.log('DEBUG: UnauthenticatedTemplate active')}
         <Login />
       </UnauthenticatedTemplate>
 
       <AuthenticatedTemplate>
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Dashboard />} />

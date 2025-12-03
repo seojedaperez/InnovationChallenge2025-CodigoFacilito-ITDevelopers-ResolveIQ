@@ -171,7 +171,15 @@ export const KnowledgeBase: React.FC = () => {
             // Client-side filter for category if using list endpoint
             let filtered = data;
             if (!searchQuery && category && category !== 'All') {
-                filtered = data.filter((a: KBArticle) => a.category === category || (category === 'IT Support' && a.category === 'it_support'));
+                const categoryMap: Record<string, string> = {
+                    'IT Support': 'it_support',
+                    'HR': 'hr_inquiry',
+                    'Facilities': 'facilities',
+                    'Legal': 'legal',
+                    'Finance': 'finance'
+                };
+                const backendCategory = categoryMap[category] || category;
+                filtered = data.filter((a: KBArticle) => a.category === category || a.category === backendCategory);
             }
 
             setArticles(filtered);

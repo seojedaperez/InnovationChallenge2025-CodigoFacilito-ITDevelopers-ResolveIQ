@@ -26,9 +26,24 @@ const useStyles = makeStyles({
         marginTop: 'auto',
         paddingTop: '15px',
         borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-        maxHeight: '300px', // Prevent infinite expansion
+        maxHeight: '250px', // Fixed height to ensure it fits
         overflowY: 'auto', // Enable internal scrolling
         paddingRight: '5px', // Space for scrollbar
+        // Custom scrollbar styling
+        '&::-webkit-scrollbar': {
+            width: '8px',
+        },
+        '&::-webkit-scrollbar-track': {
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '4px',
+        },
+        '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '4px',
+            ':hover': {
+                background: 'rgba(255, 255, 255, 0.3)',
+            },
+        },
     },
     articleCard: {
         backgroundColor: 'rgba(255, 255, 255, 0.03)',
@@ -91,7 +106,10 @@ export const RelatedArticles: React.FC<RelatedArticlesProps> = ({ query, languag
                     params: { query, limit: 3, language },
                     headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
-                setArticles(response.data.results);
+
+                // Deduplicate articles based on ID to prevent duplicate key errors
+                const uniqueArticles = Array.from(new Map(response.data.results.map((item: KBArticle) => [item.id, item])).values());
+                setArticles(uniqueArticles as KBArticle[]);
             } catch (error) {
                 console.error('Error fetching related articles:', error);
             } finally {
@@ -151,7 +169,7 @@ export const RelatedArticles: React.FC<RelatedArticlesProps> = ({ query, languag
                                     setSelectedArticle(article);
                                 }}
                             >{
-                                t('View Article')}
+                                    t('View Article')}
                             </Button>
                         </div>
                     </div>

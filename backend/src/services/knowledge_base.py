@@ -345,36 +345,52 @@ class KnowledgeBaseService:
         if not self.client:
             return self._mock_search(query, category, limit)
             
-        try:
-            # Build filter
-            filter_expression = None
-            if category:
-                filter_expression = f"category eq '{category}'"
+        # Retry logic with backoff
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # Build filter
+                filter_expression = None
+                if category:
+                    filter_expression = f"category eq '{category}'"
+                    
+                # Execute search in a separate thread to avoid blocking the event loop
+                # Add timeout to prevent infinite hangs
+                import asyncio
+                results = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.client.search,
+                        search_text=query,
+                        filter=filter_expression,
+                        top=limit,
+                        include_total_count=True
+                    ),
+                    timeout=10.0
+                )
                 
-            # Execute search
-            results = self.client.search(
-                search_text=query,
-                filter=filter_expression,
-                top=limit,
-                include_total_count=True
-            )
-            
-            articles = []
-            for result in results:
-                articles.append(KnowledgeArticle(
-                    id=result.get("id", ""),
-                    category=result.get("category", TicketCategory.UNKNOWN),
-                    title=result.get("title", ""),
-                    content=result.get("content", ""),
-                    tags=result.get("keywords", []),
-                    source=result.get("url", "Azure Search")
-                ))
+                articles = []
+                for result in results:
+                    articles.append(KnowledgeArticle(
+                        id=result.get("id", ""),
+                        category=result.get("category", TicketCategory.UNKNOWN),
+                        title=result.get("title", ""),
+                        content=result.get("content", ""),
+                        tags=result.get("keywords", []),
+                        source=result.get("url", "Azure Search")
+                    ))
+                    
+                return articles
                 
-            return articles
+            except Exception as e:
+                logger.warning(f"Search attempt {attempt+1}/{max_retries} failed: {e}")
+                if attempt == max_retries - 1:
+                    logger.error(f"All search attempts failed: {e}")
+                    return self._mock_search(query, category, limit)
+                await asyncio.sleep(1 * (attempt + 1))
+        
+        return self._mock_search(query, category, limit)
             
-        except Exception as e:
-            logger.error(f"Search failed: {e}")
-            return self._mock_search(query, category, limit)
+
 
     def _mock_search(self, query: str, category: Optional[str] = None, limit: int = 3) -> List[KnowledgeArticle]:
         """Fallback in-memory search for development"""

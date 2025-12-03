@@ -4,6 +4,12 @@ import { Button, Text, Title1, makeStyles, shorthands } from '@fluentui/react-co
 import { Person24Regular } from '@fluentui/react-icons';
 import ParticleHead from './ParticleHead';
 
+export const Windows = (props: any) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 368 408" {...props}>
+        <path fill="currentColor" d="M0 192V80l128-28v138zM363 0v187l-214 3V47zM0 213l128 2v146L0 336V213zm363 6v186l-214-40V215z"></path>
+    </svg>
+);
+
 const useStyles = makeStyles({
     container: {
         display: 'flex',
@@ -89,7 +95,7 @@ export const Login = () => {
                     appearance="primary"
                     className={styles.button}
                     onClick={handleLogin}
-                    icon={<div style={{ marginRight: '8px' }}>🪟</div>} // Simple Microsoft-ish icon
+                    icon={<Windows style={{ marginRight: '8px', fill: 'currentColor' }} />}
                 >
                     Sign in with Microsoft
                 </Button>

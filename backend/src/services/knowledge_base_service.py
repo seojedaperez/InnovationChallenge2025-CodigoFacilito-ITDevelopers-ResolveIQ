@@ -43,7 +43,7 @@ class KnowledgeBaseService:
     async def delete_article(self, article_id: str) -> bool:
         return await self.mock_service.delete_article(article_id)
 
-    async def search(self, query: str, category: Optional[str] = None, limit: int = 5) -> List[KnowledgeArticle]:
+    async def search(self, query: str, category: Optional[str] = None, limit: int = 5, language: str = "en") -> List[KnowledgeArticle]:
         """
         Search for articles using LLM-based semantic matching if available, 
         falling back to keyword search.
@@ -51,7 +51,8 @@ class KnowledgeBaseService:
         # If OpenAI is not configured, fall back to keyword search
         if not self.openai_client:
             logger.warning("Azure OpenAI not configured, falling back to keyword search")
-            return await self._keyword_search_fallback(query, category, limit)
+            articles = await self._keyword_search_fallback(query, category, limit)
+            return await self._translate_articles(articles, language)
 
         try:
             # Get all available articles (in a real app, we would use a vector DB)
@@ -102,13 +103,52 @@ class KnowledgeBaseService:
             # If LLM found nothing, try fallback just in case
             if not found_articles:
                 logger.info("LLM found no matches, trying fallback keyword search")
-                return await self._keyword_search_fallback(query, category, limit)
-                
-            return found_articles
+                found_articles = await self._keyword_search_fallback(query, category, limit)
+            
+            return await self._translate_articles(found_articles, language)
 
         except Exception as e:
             logger.error(f"Error during LLM semantic search: {e}")
-            return await self._keyword_search_fallback(query, category, limit)
+            articles = await self._keyword_search_fallback(query, category, limit)
+            return await self._translate_articles(articles, language)
+
+    async def _translate_articles(self, articles: List[KnowledgeArticle], language: str) -> List[KnowledgeArticle]:
+        """Translate articles to the target language if not English"""
+        if language.lower() in ["en", "english"] or not articles or not self.openai_client:
+            return articles
+
+        try:
+            translated_articles = []
+            for article in articles:
+                prompt = f"""Translate the following Knowledge Base article to {language}.
+                Return ONLY valid JSON with keys "title" and "content".
+                
+                Title: {article.title}
+                Content: {article.content}
+                """
+                
+                response = await self.openai_client.chat.completions.create(
+                    model=settings.AZURE_OPENAI_GPT4O_DEPLOYMENT,
+                    messages=[
+                        {"role": "system", "content": "You are a professional translator. Output valid JSON only."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.3
+                )
+                
+                content = json.loads(response.choices[0].message.content)
+                
+                # Create a copy with translated content
+                translated_article = article.copy()
+                translated_article.title = content.get("title", article.title)
+                translated_article.content = content.get("content", article.content)
+                translated_articles.append(translated_article)
+                
+            return translated_articles
+        except Exception as e:
+            logger.error(f"Error translating articles: {e}")
+            return articles
 
     async def _keyword_search_fallback(self, query: str, category: Optional[str] = None, limit: int = 5) -> List[KnowledgeArticle]:
         """Fallback to simple keyword matching"""

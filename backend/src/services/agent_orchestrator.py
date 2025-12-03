@@ -75,12 +75,20 @@ class AgentOrchestrator:
         logger.info("Shutting down Agent Orchestrator...")
         self.initialized = False
 
-    async def _run_safety_check(self, text: str) -> bool:
+    async def _run_safety_check(self, text: str):
+        print(f'DEBUG: _run_safety_check called with {text[:20]}')
         """Run content safety checks"""
         if self.content_safety:
-            result = await self.content_safety.check_text(text)
-            return result.is_safe
-        return True
+            # Use analyze_text instead of check_text
+            res = await self.content_safety.analyze_text(text)
+            print(f'DEBUG: analyze_text returned type {type(res)} value {res}')
+            return res
+        
+        # Return a mock safe result object if service not available
+        class MockResult:
+            is_safe = True
+            blocked_reason = None
+        return MockResult()
 
     async def _categorize_ticket(self, description: str, thread_id: str) -> tuple[TicketCategory, List[TicketCategory]]:
         """Categorize ticket using Router Agent"""
@@ -115,7 +123,7 @@ class AgentOrchestrator:
             ticket.metadata["feedback_rating"] = rating
             if comments:
                 ticket.metadata["feedback_comments"] = comments
-            self._save_data()
+            await self._save_data_async()
             return True
             
         return False
@@ -174,10 +182,13 @@ class AgentOrchestrator:
         }
 
         for agent_type, (name, model, instructions) in agent_definitions.items():
-            agent = await self.foundry.create_agent(name, model, instructions)
-            if agent:
-                self.agents[agent_type] = agent
-                logger.info(f"Initialized agent: {name}")
+            try:
+                agent = await self.foundry.create_agent(name, model, instructions)
+                if agent:
+                    self.agents[agent_type] = agent
+                    logger.info(f"Initialized agent: {name}")
+            except Exception as e:
+                logger.error(f"Failed to initialize agent {name}: {e}")
         
         logger.info(f"Initialized {len(self.agents)} agents")
     
@@ -206,180 +217,225 @@ class AgentOrchestrator:
         """
         Process a ticket through the multi-agent orchestration pipeline
         """
-        ticket_id = str(uuid.uuid4())
-        logger.info(f"Processing ticket {ticket_id}: {ticket_request.description[:100]}...")
-        
-        if self.telemetry:
-            await self.telemetry.log_event("TicketCreated", {
-                "ticket_id": ticket_id,
-                "user_id": ticket_request.user_id,
-                "channel": ticket_request.channel
-            })
-        
-        # Create ticket
-        ticket = Ticket(
-            id=ticket_id,
-            user_id=ticket_request.user_id,
-            description=ticket_request.description,
-            channel=ticket_request.channel,
-            priority=ticket_request.priority,
-            status=TicketStatus.IN_PROGRESS
-        )
-        
-        # Create conversation thread
-        thread_id = str(uuid.uuid4())
-        # If using real Foundry service, create actual thread
-        if self.foundry and self.foundry.project_client:
-            try:
-                thread = await self.foundry.create_thread()
-                thread_id = thread.id
-            except Exception as e:
-                logger.error(f"Failed to create Foundry thread: {e}")
-
-        conversation = AgentConversation(
-            id=str(uuid.uuid4()),
-            ticket_id=ticket_id,
-            thread_id=thread_id,
-            messages=[]
-        )
-        
-        # Step 1: Safety Agent
-        safety_result = await self._run_safety_check(ticket.description)
-        conversation.messages.append(AgentMessage(
-            agent_type=AgentType.SAFETY,
-            content=f"Safety check completed: {'SAFE' if safety_result else 'BLOCKED'}",
-            confidence=1.0 if safety_result else 0.0
-        ))
-        
-        if self.telemetry:
-            await self.telemetry.log_responsible_ai(
-                "ContentSafety", 
-                safety_result, 
-                1.0 if safety_result else 0.0, 
-                "Initial safety check"
+        try:
+            ticket_id = str(uuid.uuid4())
+            logger.info(f"Processing ticket {ticket_id}: {ticket_request.description[:100]}...")
+            
+            if self.telemetry:
+                await self.telemetry.log_event("TicketCreated", {
+                    "ticket_id": ticket_id,
+                    "user_id": ticket_request.user_id,
+                    "channel": ticket_request.channel
+                })
+            
+            # Create ticket
+            ticket = Ticket(
+                id=ticket_id,
+                user_id=ticket_request.user_id,
+                description=ticket_request.description,
+                channel=ticket_request.channel,
+                priority=ticket_request.priority,
+                status=TicketStatus.IN_PROGRESS
             )
-        
-        if not safety_result:
-            ticket.status = TicketStatus.ESCALATED
-            ticket.escalation_reason = "Content safety violation detected"
-            if self.telemetry:
-                await self.telemetry.log_audit("TicketBlocked", ticket.user_id, "Blocked due to safety violation", "BLOCKED")
-            return self._create_escalation_response(ticket, conversation)
-        
-        # Step 2: Router Agent - Categorize ticket
-        category, detected_categories = await self._categorize_ticket(ticket.description, thread_id)
-        ticket.category = category
-        
-        cat_value = category.value if hasattr(category, "value") else str(category)
-        det_values = [c.value if hasattr(c, "value") else str(c) for c in detected_categories]
-        
-        conversation.messages.append(AgentMessage(
-            agent_type=AgentType.ROUTER,
-            content=f"Ticket categorized as: {cat_value}" + (f" ({', '.join(det_values)})" if cat_value == "multi" else ""),
-            confidence=0.92,
-            reasoning="Based on keyword analysis and semantic understanding"
-        ))
-        
-        if self.telemetry:
-            await self.telemetry.log_event("TicketCategorized", {
-                "ticket_id": ticket_id,
-                "category": cat_value,
-                "detected": det_values
-            })
-        
-        # Step 3: Domain Specialist - Process with specialized agent
-        specialist_response, runbook_executed = await self._route_to_specialist(ticket, conversation, thread_id, detected_categories)
-        
-        # Step 4: Confidence Scoring
-        confidence_score = await self._calculate_confidence(ticket, conversation, runbook_executed)
-        ticket.confidence_score = confidence_score
-        
-        # Step 5: Decision Logic (Auto-resolve, Clarify, or Escalate)
-        if confidence_score >= settings.CONFIDENCE_THRESHOLD_AUTO_RESOLVE:
-            ticket.status = TicketStatus.RESOLVED
-            ticket.resolved_at = datetime.utcnow()
-            if self.telemetry:
-                await self.telemetry.log_audit("TicketResolved", ticket.user_id, f"Auto-resolved with confidence {confidence_score}", "RESOLVED")
-        elif confidence_score >= 0.5:
-            # Moderate confidence: Ask for missing details
-            ticket.status = TicketStatus.PENDING_USER
-            ticket.resolution = "I need a bit more information to help you. Could you please provide more details?"
+            
+            # Create conversation thread
+            thread_id = str(uuid.uuid4())
+            # If using real Foundry service, create actual thread
+            if self.foundry and self.foundry.project_client:
+                try:
+                    thread = await self.foundry.create_thread()
+                    thread_id = thread.id
+                except Exception as e:
+                    logger.error(f"Failed to create Foundry thread: {e}")
+
+            conversation = AgentConversation(
+                id=str(uuid.uuid4()),
+                ticket_id=ticket_id,
+                thread_id=thread_id,
+                messages=[]
+            )
+            
+            # Step 1: Safety Agent
+            safety_result = await self._run_safety_check(ticket.description)
+            print(f'DEBUG: safety_result type {type(safety_result)} value {safety_result}')
+            is_safe = safety_result.is_safe
+            blocked_reason = safety_result.blocked_reason
+
             conversation.messages.append(AgentMessage(
-                agent_type=AgentType.PLANNER,
-                content="Requesting clarification from user due to missing details.",
-                confidence=confidence_score,
-                reasoning="Ambiguous request or missing parameters"
+                agent_type=AgentType.SAFETY,
+                content=f"Safety check completed: {'SAFE' if is_safe else 'BLOCKED'}",
+                confidence=1.0 if is_safe else 0.0
             ))
+            
             if self.telemetry:
-                await self.telemetry.log_event("ClarificationRequested", {"ticket_id": ticket_id})
-        else:
-            # Low confidence: Escalate to human
-            ticket.status = TicketStatus.ESCALATED
-            ticket.escalation_reason = f"Confidence score {confidence_score:.2f} below threshold"
-            await self._notify_human_agent(ticket)
+                await self.telemetry.log_responsible_ai(
+                    "ContentSafety", 
+                    is_safe, 
+                    1.0 if is_safe else 0.0, 
+                    "Initial safety check"
+                )
+            
+            if not is_safe:
+                ticket.status = TicketStatus.BLOCKED
+                ticket.escalation_reason = blocked_reason or "Content safety violation detected"
+                
+                # Determine language for response
+                is_spanish = "es" in (ticket_request.metadata or {}).get("language", "en")
+                
+                final_msg = blocked_reason or "Blocked due to safety violation"
+                if is_spanish:
+                    # Localize common reasons
+                    if "Potential jailbreak" in final_msg:
+                        final_msg = "Bloqueado: Intento de manipulación detectado"
+                    elif "PII detected" in final_msg:
+                        final_msg = "Bloqueado: Información personal detectada"
+                    elif "hate speech" in final_msg:
+                        final_msg = "Bloqueado: Discurso de odio detectado"
+                    elif "violence" in final_msg:
+                        final_msg = "Bloqueado: Contenido violento detectado"
+                    else:
+                        final_msg = "Bloqueado debido a una violación de seguridad"
+                
+                # Create a minimal conversation for the response
+                conversation.messages.append(AgentMessage(
+                    agent_type=AgentType.SAFETY,
+                    content=final_msg,
+                    confidence=1.0
+                ))
+                
+                if self.telemetry:
+                    await self.telemetry.log_audit("TicketBlocked", ticket.user_id, "Blocked due to safety violation", "BLOCKED")
+                
+                # Return response WITHOUT saving to DB
+                return TicketResponse(
+                    ticket=ticket,
+                    conversation=conversation,
+                    explanation_graph=ExplanationNode(
+                        agent=AgentType.SAFETY,
+                        action="Blocked Content",
+                        reasoning="Content safety violation",
+                        confidence=1.0,
+                        timestamp=datetime.utcnow(),
+                        children=[]
+                    ),
+                    next_steps=[],
+                    requires_user_action=False
+                )
+            
+            # Step 2: Router Agent - Categorize ticket
+            category, detected_categories = await self._categorize_ticket(ticket.description, thread_id)
+            ticket.category = category
+            
+            cat_value = category.value if hasattr(category, "value") else str(category)
+            det_values = [c.value if hasattr(c, "value") else str(c) for c in detected_categories]
+            
+            conversation.messages.append(AgentMessage(
+                agent_type=AgentType.ROUTER,
+                content=f"Ticket categorized as: {cat_value}" + (f" ({', '.join(det_values)})" if cat_value == "multi" else ""),
+                confidence=0.92,
+                reasoning="Based on keyword analysis and semantic understanding"
+            ))
+            
             if self.telemetry:
-                await self.telemetry.log_audit("TicketEscalated", ticket.user_id, "Escalated to human agent", "ESCALATED")
-        
-        # Save to database
-        if self.cosmos:
-            try:
-                await self.cosmos.create_ticket(ticket)
-                await self.cosmos.create_conversation(conversation, ticket.user_id)
-                logger.info(f"Ticket saved to Cosmos DB: {ticket_id}")
-            except Exception as e:
-                logger.error(f"Failed to save to Cosmos DB: {e}")
-        else:
+                await self.telemetry.log_event("TicketCategorized", {
+                    "ticket_id": ticket_id,
+                    "category": cat_value,
+                    "detected": det_values
+                })
+            
+            # Step 3: Domain Specialist - Process with specialized agent
+            specialist_response, runbook_executed = await self._route_to_specialist(ticket, conversation, thread_id, detected_categories)
+            
+            # Step 4: Confidence Scoring
+            confidence_score = await self._calculate_confidence(ticket, conversation, runbook_executed)
+            ticket.confidence_score = confidence_score
+            
+            # Step 5: Decision Logic (Auto-resolve, Clarify, or Escalate)
+            if confidence_score >= settings.CONFIDENCE_THRESHOLD_AUTO_RESOLVE:
+                ticket.status = TicketStatus.RESOLVED
+                ticket.resolved_at = datetime.utcnow()
+                if self.telemetry:
+                    await self.telemetry.log_audit("TicketResolved", ticket.user_id, f"Auto-resolved with confidence {confidence_score}", "RESOLVED")
+            elif confidence_score >= 0.5:
+                # Moderate confidence: Ask for missing details
+                ticket.status = TicketStatus.PENDING_USER
+                ticket.resolution = "I need a bit more information to help you. Could you please provide more details?"
+                conversation.messages.append(AgentMessage(
+                    agent_type=AgentType.PLANNER,
+                    content="Requesting clarification from user due to missing details.",
+                    confidence=confidence_score,
+                    reasoning="Ambiguous request or missing parameters"
+                ))
+                if self.telemetry:
+                    await self.telemetry.log_event("ClarificationRequested", {"ticket_id": ticket_id})
+            else:
+                # Low confidence: Escalate to human
+                ticket.status = TicketStatus.ESCALATED
+                ticket.escalation_reason = f"Confidence score {confidence_score:.2f} below threshold"
+                await self._notify_human_agent(ticket)
+                if self.telemetry:
+                    await self.telemetry.log_audit("TicketEscalated", ticket.user_id, "Escalated to human agent", "ESCALATED")
+            
+            # Save to database
+            if self.cosmos:
+                try:
+                    await self.cosmos.create_ticket(ticket)
+                    await self.cosmos.create_conversation(conversation, ticket.user_id)
+                    logger.info(f"Ticket saved to Cosmos DB: {ticket_id}")
+                except Exception as e:
+                    logger.error(f"Failed to save to Cosmos DB: {e}")
+            else:
+                self.tickets_db[ticket_id] = ticket
+                self.conversations_db[ticket_id] = conversation
+                
+            # Always save to local persistence for demo
             self.tickets_db[ticket_id] = ticket
             self.conversations_db[ticket_id] = conversation
+            await self._save_data_async()
             
-        # Always save to local persistence for demo
-        self.tickets_db[ticket_id] = ticket
-        self.conversations_db[ticket_id] = conversation
-        self._save_data()
-        
-        # Step 6: Generate explanation graph
-        explanation_graph = self._build_explanation_graph(conversation)
-        
-        # Build response
-        return TicketResponse(
-            ticket=ticket,
-            conversation=conversation,
-            explanation_graph=explanation_graph,
-            next_steps=self._generate_next_steps(ticket),
-            requires_user_action=(ticket.status == TicketStatus.PENDING_USER)
-        )
+            # Step 6: Generate explanation graph
+            explanation_graph = self._build_explanation_graph(conversation)
+            
+            # Build response
+            return TicketResponse(
+                ticket=ticket,
+                conversation=conversation,
+                explanation_graph=explanation_graph,
+                next_steps=self._generate_next_steps(ticket),
+                requires_user_action=(ticket.status == TicketStatus.PENDING_USER)
+            )
+        except Exception as e:
+            logger.error(f"Critical error in process_ticket: {e}", exc_info=True)
+            # Create a fallback error response
+            error_ticket = Ticket(
+                id=str(uuid.uuid4()),
+                user_id=ticket_request.user_id,
+                description=ticket_request.description,
+                status=TicketStatus.ESCALATED,
+                priority=ticket_request.priority,
+                category=TicketCategory.UNKNOWN,
+                escalation_reason=f"System error: {str(e)}"
+            )
+            return TicketResponse(
+                ticket=error_ticket,
+                conversation=AgentConversation(id="error", ticket_id=error_ticket.id, thread_id="error", messages=[]),
+                explanation_graph=ExplanationNode(
+                    agent=AgentType.ESCALATION, 
+                    action="System Error", 
+                    reasoning=f"An unexpected error occurred: {str(e)}", 
+                    confidence=0.0, 
+                    timestamp=datetime.utcnow(),
+                    children=[]
+                ),
+                next_steps=["Contact support manually"],
+                requires_user_action=True
+            )
     
-    async def _run_safety_check(self, content: str) -> bool:
-        """Run safety check using Azure Content Safety AND LLM Evaluator"""
-        logger.debug(f"Running safety check on content: {content[:50]}...")
-        
-        # 0. Local PII Check (Regex) - Immediate block for obvious PII
-        if self._check_pii_regex(content):
-             logger.warning("Content Safety blocked: PII detected (Regex)")
-             return False
-        
-        is_safe = True
-        
-        # 1. Azure Content Safety (Fast, cheap, pattern-based)
-        if self.content_safety:
-            result = await self.content_safety.analyze_text(content)
-            if not result.is_safe:
-                logger.warning(f"Content Safety blocked: {result.blocked_reason}")
-                return False
-            is_safe = result.is_safe
-            
-        # 2. LLM Safety Evaluator (Semantic, context-aware)
-        # We run this even if Azure says "Safe" to catch sophisticated jailbreaks
-        if is_safe:
-            is_safe = await self._run_llm_safety_check(content)
-            
-        return is_safe
-
     def _check_pii_regex(self, content: str) -> bool:
         """Check for PII using regex"""
         import re
         
-        # Regex for 13-19 digit numbers (Credit Cards)
+        # Regex for 13-19 digit numbers (Credit Cards) - handles spaces and dashes
         cc_pattern = r'\b(?:\d[ -]*?){13,19}\b'
         # Regex for Email
         email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
@@ -448,6 +504,8 @@ class AgentOrchestrator:
         # Fallback / Mock implementation
         description_lower = description.lower()
         
+        import re
+        
         it_keywords = [
             "password", "reset", "login", "access", "software", "license", "computer", "laptop",
             "contraseña", "resetear", "acceso", "teclado", "compu", "vpn", "internet", "wifi", "monitor", "mouse"
@@ -473,30 +531,27 @@ class AgentOrchestrator:
         # Check for multiple categories (Ambiguity)
         categories_found = set()
         
-        for keyword in it_keywords:
-            if keyword in description_lower:
-                categories_found.add(TicketCategory.IT_SUPPORT)
-                break
+        def check_keywords(keywords, text):
+            for keyword in keywords:
+                # Use regex word boundary to avoid partial matches (e.g. "nda" in "anda", "hr" in "three")
+                if re.search(r'\b' + re.escape(keyword) + r'\b', text):
+                    return True
+            return False
         
-        for keyword in hr_keywords:
-            if keyword in description_lower:
-                categories_found.add(TicketCategory.HR_INQUIRY)
-                break
+        if check_keywords(it_keywords, description_lower):
+            categories_found.add(TicketCategory.IT_SUPPORT)
         
-        for keyword in facilities_keywords:
-            if keyword in description_lower:
-                categories_found.add(TicketCategory.FACILITIES)
-                break
+        if check_keywords(hr_keywords, description_lower):
+            categories_found.add(TicketCategory.HR_INQUIRY)
+        
+        if check_keywords(facilities_keywords, description_lower):
+            categories_found.add(TicketCategory.FACILITIES)
                 
-        for keyword in legal_keywords:
-            if keyword in description_lower:
-                categories_found.add(TicketCategory.LEGAL)
-                break
+        if check_keywords(legal_keywords, description_lower):
+            categories_found.add(TicketCategory.LEGAL)
                 
-        for keyword in finance_keywords:
-            if keyword in description_lower:
-                categories_found.add(TicketCategory.FINANCE)
-                break
+        if check_keywords(finance_keywords, description_lower):
+            categories_found.add(TicketCategory.FINANCE)
         
         detected_list = list(categories_found)
         
@@ -902,16 +957,8 @@ class AgentOrchestrator:
         from .knowledge_base_service import get_knowledge_base_service
         
         kb_service = get_knowledge_base_service()
-        articles = await kb_service.search(query, category, limit)
-        
-        # Translate if needed
-        if language and language.lower() not in ['en', 'english'] and articles:
-            try:
-                from .simple_agent_fixed import get_simple_agent
-                agent = get_simple_agent()
-                articles = await agent._translate_articles(articles, language)
-            except Exception as e:
-                logger.error(f"Error translating search results: {e}")
+        # Pass language directly to kb_service which now handles translation
+        articles = await kb_service.search(query, category, limit, language)
         
         # Convert to dict for response
         return [article.model_dump() for article in articles]

@@ -4,6 +4,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+_email_service = None
+
 class EmailService:
     def __init__(self):
         self.connection_string = settings.AZURE_COMMUNICATION_CONNECTION_STRING
@@ -30,6 +32,19 @@ class EmailService:
                 "recipients":  {
                     "to": [{"address": recipient}]
                 },
+                "content": {
+                    "subject": subject,
+                    "html": html_content
+                }
+            }
+            
+            poller = self.client.begin_send(message)
+            result = poller.result()
+            logger.info(f"Email sent successfully to {recipient}. MessageId: {result.get('messageId')}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send email to {recipient}: {e}")
+            return False
 
 def get_email_service():
     global _email_service

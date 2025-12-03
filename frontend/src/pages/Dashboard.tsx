@@ -111,6 +111,7 @@ interface Message {
     status?: 'sending' | 'sent' | 'error' | 'pending';
     relatedArticles?: KBArticle[];
     category?: string;
+    categories?: string[];
     priority?: string;
 }
 
@@ -270,6 +271,8 @@ export const Dashboard: React.FC = () => {
     const sendMessageToBackend = async (text: string, messageId: string) => {
         const accessToken = await getAccessToken();
 
+
+
         // console.log('DEBUG: Sending request with language:', language);
         const response = await axios.post('/api/v1/chat', {
             user_id: userAccount?.username || 'guest',
@@ -296,6 +299,7 @@ export const Dashboard: React.FC = () => {
             timestamp: new Date(),
             relatedArticles: response.data.kb_articles,
             category: response.data.category,
+            categories: response.data.categories,
             priority: response.data.priority
         };
         setMessages(prev => [...prev, aiMsg]);
@@ -378,6 +382,7 @@ export const Dashboard: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        console.log("handleFileChange triggered", event.target.files);
         const file = event.target.files?.[0];
         if (!file) return;
 
@@ -531,13 +536,13 @@ export const Dashboard: React.FC = () => {
                                     opacity: msg.status === 'pending' ? 0.7 : 1
                                 }}>
                                     <Text>{msg.content}</Text>
-                                    {(msg.category || msg.priority) && (
+                                    {(msg.categories?.length ? msg.categories : (msg.category ? [msg.category] : [])).length > 0 && (
                                         <div style={{ marginTop: '8px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                            {msg.category && (
-                                                <Badge appearance="outline" color="brand">
-                                                    {msg.category}
+                                            {(msg.categories?.length ? msg.categories : (msg.category ? [msg.category] : [])).map((cat, idx) => (
+                                                <Badge key={idx} appearance="outline" color="brand">
+                                                    {cat}
                                                 </Badge>
-                                            )}
+                                            ))}
                                             {msg.priority && (
                                                 <Badge
                                                     appearance="filled"
@@ -613,18 +618,19 @@ export const Dashboard: React.FC = () => {
                             padding: '5px 10px',
                             border: '1px solid rgba(255,255,255,0.1)'
                         }}>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                style={{ display: 'none' }}
-                                accept="image/*,.pdf,.doc,.docx"
-                                onChange={handleFileChange}
-                            />
                             <Button
                                 appearance="subtle"
                                 icon={<Attach24Regular />}
                                 disabled={!isOnline && !pendingQueue.length}
-                                onClick={() => fileInputRef.current?.click()}
+                                onClick={() => {
+                                    console.log("Attachment button clicked");
+                                    if (fileInputRef.current) {
+                                        console.log("Triggering file input click");
+                                        fileInputRef.current.click();
+                                    } else {
+                                        console.error("File input ref is null");
+                                    }
+                                }}
                                 title={t('Attach image or document')}
                             />
                             <Input
@@ -645,6 +651,17 @@ export const Dashboard: React.FC = () => {
                             <Button appearance="primary" icon={<Send24Regular />} onClick={handleSend} />
                         </div>
                     </div>
+                    {/* Hidden File Input moved here */}
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        accept="image/*,.pdf,.doc,.docx"
+                        onChange={(e) => {
+                            console.log("File input changed");
+                            handleFileChange(e);
+                        }}
+                    />
                 </div >
 
                 {/* Insights Panel */}

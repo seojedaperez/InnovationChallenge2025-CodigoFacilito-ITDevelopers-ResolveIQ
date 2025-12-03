@@ -28,6 +28,7 @@ class TicketStatus(str, Enum):
     ESCALATED = "escalated"
     RESOLVED = "resolved"
     CLOSED = "closed"
+    BLOCKED = "blocked"
 
 
 class AgentType(str, Enum):
