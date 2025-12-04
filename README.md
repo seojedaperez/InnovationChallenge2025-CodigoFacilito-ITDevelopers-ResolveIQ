@@ -2,6 +2,8 @@
 
 ResolveIQ is an intelligent helpdesk solution that uses autonomous AI agents, advanced orchestration, and Azure cognitive services to revolutionize customer support and internal assistance.
 
+**Demo Link:** https://bit.ly/ResolveIQ
+
 ## 🚀 Technologies and Architecture
 
 The system is built on a modern microservices architecture, clearly separating the frontend from the backend, and heavily relying on the Azure cloud for its cognitive capabilities.
