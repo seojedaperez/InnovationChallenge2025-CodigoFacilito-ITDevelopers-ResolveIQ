@@ -6,22 +6,19 @@ ResolveIQ is an intelligent helpdesk solution that uses autonomous AI agents, ad
 
 ## 📋 Table of Contents
 
-1. [System Architecture](#-system-architecture)
+1. [System Architecture](#️-system-architecture)
 2. [Main Components](#-main-components)
 3. [Workflows](#-workflows)
 4. [Detailed Use Cases](#-detailed-use-cases)
 5. [Technologies](#-technologies)
-6. [Installation](#-installation)
-7. [Deployment](#-deployment)
-8. [Security & Compliance](#-security--compliance)
-
-## 🚀 Technologies and Architecture
-
-The system is built on a modern microservices architecture, clearly separating the frontend from the backend, and heavily relying on the Azure cloud for its cognitive capabilities.
-
----
+6. [Security & Compliance](#️-security-and-compliance)
+7. [Local Installation](#-local-installation)
+8. [Azure Deployment](#️-azure-deployment-docker--container-apps)
+9. [Capabilities & Example Queries](#-capabilities--example-queries)
 
 ## 🏗️ System Architecture
+
+The system is built on a modern microservices architecture, clearly separating the frontend from the backend, and heavily relying on the Azure cloud for its cognitive capabilities.
 
 ### General Architecture Diagram
 
