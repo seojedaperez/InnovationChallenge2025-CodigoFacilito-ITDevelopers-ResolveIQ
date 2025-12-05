@@ -4,10 +4,6 @@ ResolveIQ is an intelligent helpdesk solution that uses autonomous AI agents, ad
 
 **Demo Link:** https://bit.ly/ResolveIQ
 
-## 🚀 Technologies and Architecture
-
-The system is built on a modern microservices architecture, clearly separating the frontend from the backend, and heavily relying on the Azure cloud for its cognitive capabilities.
-
 ## 📋 Table of Contents
 
 1. [System Architecture](#-system-architecture)
@@ -18,6 +14,10 @@ The system is built on a modern microservices architecture, clearly separating t
 6. [Installation](#-installation)
 7. [Deployment](#-deployment)
 8. [Security & Compliance](#-security--compliance)
+
+## 🚀 Technologies and Architecture
+
+The system is built on a modern microservices architecture, clearly separating the frontend from the backend, and heavily relying on the Azure cloud for its cognitive capabilities.
 
 ---
 
